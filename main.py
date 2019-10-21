@@ -1,6 +1,7 @@
 import sys
 
 from files_reader import read_network_file, read_initial_weights_file, read_dataset_file
+from NeuralNetwork import NeuralNetWork
 
 
 def main():
@@ -15,6 +16,12 @@ def main():
 
     # 3rd parameter: dataset.csv
     dataset = read_dataset_file(sys.argv[3])
+
+    neural_network = NeuralNetWork(initial_weights)
+
+    instance = dataset.iloc[0]
+
+    result = neural_network.propagate_instance_through_network(instance)
 
 
 if __name__ == "__main__":
