@@ -20,13 +20,15 @@ class NeuralNetWork():
         for layer_index, layer_matrix in enumerate(self.layers_matrices):
             if layer_index == 0:
                 matrices_product = np.dot(layer_matrix, matrix_values_instance)
-                matrices_product = self.calculate_sigmoide(matrices_product)
-                matrices_product = self.add_bias_term(matrices_product)
             else:
                 matrices_product = np.dot(layer_matrix, matrices_product)
-                matrices_product = self.calculate_sigmoide(matrices_product)
 
-        return matrices_product.item(0, 0)
+            matrices_product = self.calculate_sigmoide(matrices_product)
+
+            if layer_index < len(self.layers_matrices) - 1:
+                matrices_product = self.add_bias_term(matrices_product)
+
+        return matrices_product
 
     def calculate_sigmoide(self, product_matrix):
         result = np.matrix([[self.sigmoide(value.item(0, 0))]
