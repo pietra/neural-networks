@@ -5,20 +5,20 @@ from math import floor
 
 class Data(object):
 
-    def __init__(self, className='class', literals=[]):
+    def __init__(self, className='class', categoricalVars=[]):
         self.className = className
         self.keys = []
         self.instances = []
         self.attributes = []
 
-        if isinstance(literals, list):
-            self.literalAttr = literals
-        elif isinstance(literals, str):
-            self.literalAttr = [literals]
+        if isinstance(categoricalVars, list):
+            self.categoricalAttr = categoricalVars
+        elif isinstance(categoricalVars, str):
+            self.categoricalAttr = [categoricalVars]
         else:
             raise ValueError("Attribute 'numeric' should be a list or str")
 
-        self.literalAttr = literals
+        self.categoricalAttr = categoricalVars
 
     def __repr__(self):
         return "<Data {} -> {}>".format(self.attributes, self.className)
@@ -67,7 +67,7 @@ class Data(object):
         for row in reader:
             # row is an OrderedDict by default
             for key in row.keys():
-                if key not in self.literalAttr:
+                if key not in self.categoricalAttr:
                     row[key] = float(row[key])
 
             self.addInstance(dict(row))
@@ -229,7 +229,7 @@ class Data(object):
 
     def isNumeric(self, attrName):
         
-        if attrName in self.literalAttr:
+        if attrName in self.categoricalAttr:
             return False
         else:
             return True
