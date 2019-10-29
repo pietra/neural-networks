@@ -1,22 +1,38 @@
 import math
 
 import numpy as np
-
+import logging
 from util import return_matrix_of_instance_values
+from data import Data
+
+
+# Initialize logging
+log = logging.getLogger('neural-network')
+log.setLevel(logging.DEBUG)
+ch = logging.FileHandler('neural-network.log')
+# ch = logging.StreamHandler()
+formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+log.addHandler(ch)
+log.info('New log ---------------------------------------')
 
 
 class NeuralNetWork():
-    def __init__(self, initial_weights):
+    def __init__(self, initial_weights, regFactor=0):
         self.layers_matrices = []
         self.create_layers_matrixes(initial_weights)
+        self.regularization_factor = regFactor
 
     def create_layers_matrixes(self, initial_weights):
         for layer in initial_weights.values():
             matrix = np.matrix([neuron for neuron in layer.values()])
             self.layers_matrices.append(matrix)
+        
+        # log.debug('Resulting neural network:\n {}'.format(self.layers_matrices))
 
-    def propagate_instance_through_network(self, instance):
+    def propagate_instance_through_network(self, instance, debug=False):
         matrix_values_instance = return_matrix_of_instance_values(instance)
+        log.debug('Propagating: {}'.format(matrix_values_instance))
         for layer_index, layer_matrix in enumerate(self.layers_matrices):
             if layer_index == 0:
                 matrices_product = np.dot(layer_matrix, matrix_values_instance)
@@ -27,6 +43,8 @@ class NeuralNetWork():
 
             if layer_index < len(self.layers_matrices) - 1:
                 matrices_product = self.add_bias_term(matrices_product)
+
+            log.debug("Matrix product: {}".format(matrices_product))
 
         return matrices_product
 
@@ -40,3 +58,4 @@ class NeuralNetWork():
 
     def add_bias_term(self, matrices_product):
         return np.vstack([[1.0], matrices_product])
+

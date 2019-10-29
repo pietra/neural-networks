@@ -1,11 +1,17 @@
+#!/usr/bin/python3
 import sys
-
 from files_reader import read_network_file, read_initial_weights_file, read_dataset_file
 from NeuralNetwork import NeuralNetWork
+from data import Data
 
 
 def main():
     print("Starting Neural Networks Algorithm...")
+
+    # For tests
+    sys.argv.append('entry_files/network.txt')
+    sys.argv.append('entry_files/initial_weights.txt')
+    sys.argv.append('datasets/test.csv')
 
     # 1st parameter: network.txt
     regularization_factor, networks_layers_size = read_network_file(
@@ -15,11 +21,12 @@ def main():
     initial_weights = read_initial_weights_file(sys.argv[2])
 
     # 3rd parameter: dataset.csv
-    dataset = read_dataset_file(sys.argv[3])
+    dataset = Data(literals=[])
+    dataset.parseFromFile(sys.argv[3])
 
-    neural_network = NeuralNetWork(initial_weights)
+    neural_network = NeuralNetWork(initial_weights, regFactor=regularization_factor)
 
-    instance = dataset.iloc[0]
+    instance = dataset.instances[0]
 
     result = neural_network.propagate_instance_through_network(instance)
 
