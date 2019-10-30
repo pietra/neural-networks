@@ -9,9 +9,9 @@ def main():
     print("Starting Neural Networks Algorithm...")
 
     # For tests
-    # sys.argv.append('entry_files/network.txt')
-    # sys.argv.append('entry_files/initial_weights.txt')
-    # sys.argv.append('datasets/test.csv')
+    sys.argv.append('entry_files/network.txt')
+    sys.argv.append('entry_files/initial_weights.txt')
+    sys.argv.append('datasets/test.csv')
 
     # 1st parameter: network.txt
     regularization_factor, networks_layers_size = read_network_file(
@@ -28,7 +28,8 @@ def main():
 
     instance = dataset.instances[0]
 
-    result = neural_network.propagate_instance_through_network(instance)
+    (result, predictionMatrix) = neural_network.propagate_instance_through_network(instance)
+    # neural_network.train(dataset)
 
 
 if __name__ == "__main__":
