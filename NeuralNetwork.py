@@ -73,23 +73,14 @@ class NeuralNetWork():
             log.debug("f = {}, y = {}".format(f, y))
 
     def calculate_cost_function(self, instances):
-        # 1.J=0 // inicializa a variável que irá acumular o erro total da rede
-        # 2.Para cada exemplo (x(i), y(i)) no conjunto de treinamento:
-        # 1.Propaga x(i) e obtém as saídas fθ(x(i)) preditas pela rede
-        # 2.Calcula o vetor J(i) com o custo associado à cada saída da rede para o exemplo atual
-        # J(i) = -y(i) .* log(fθ(x(i))) - (1-y(i)) .* log(1 - fθ(x(i)))
-        # J = J + sum(J(i)) // soma os elementos do vetor J(i) e acumula o resultado em J
-        # 3.J = J / n // divide o erro total calculado pelo número de exemplos
-        # 4.S = eleva cada peso da rede ao quadrado (exceto os pesos de bias) e os soma
-        # 5.S = (λ/(2n)) * S // calcula o termo de regularização
-        # 6.Retorna o custo regularizado J+S
         j_value = 0
         number_of_instances = len(instances)
         for instance in instances:
             prediction, activation_matrix = self.propagate_instance_through_network(
                 instance)
-            for element in prediction:
-                j_value = j_value + self.j_function(element, instance['class'])
+            vector_of_classes = self.generate_vector_of_class(instance)
+            for element, a_class in zip(prediction, vector_of_classes):
+                j_value = j_value + self.j_function(element, a_class)
 
         j_value = j_value / number_of_instances
 
@@ -100,9 +91,10 @@ class NeuralNetWork():
 
     def sum_network_weights(self, activation_matrix):
         s = 0
-        for layer in activation_matrix:
-            for j in range(1, len(layer)):
-                s = s + math.pow(layer[j], 2)
+        for i, layer in enumerate(activation_matrix):
+            if i < len(activation_matrix) - 1:
+                for j in range(1, len(layer)):
+                    s = s + math.pow(layer[j], 2)
 
         return s
 
@@ -110,3 +102,10 @@ class NeuralNetWork():
         j = - real_value * math.log(predicted_value) - \
             (1 - real_value) * math.log(1 - predicted_value)
         return j
+
+    def generate_vector_of_class(self, instance):
+        vector_of_classes = []
+        for attribute in instance:
+            if 'class' in attribute:
+                vector_of_classes.append(instance[attribute])
+        return vector_of_classes
