@@ -24,11 +24,15 @@ def main():
     dataset = Data(categoricalVars=[])
     dataset.parseFromFile(sys.argv[3])
 
-    neural_network = NeuralNetWork(initial_weights, regFactor=regularization_factor)
+    neural_network = NeuralNetWork(
+        initial_weights, regFactor=regularization_factor)
 
     instance = dataset.instances[0]
 
     (result, predictionMatrix) = neural_network.propagate_instance_through_network(instance)
+
+    j_value = neural_network.calculate_cost_function(dataset.instances)
+
     # neural_network.train(dataset)
 
 
