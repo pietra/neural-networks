@@ -1,7 +1,9 @@
 import math
-
-import numpy as np
 import logging
+
+from functools import reduce
+import numpy as np
+
 from util import return_matrix_of_instance_values
 from data import Data
 
@@ -65,7 +67,6 @@ class NeuralNetWork():
         return np.vstack([[1.0], matrices_product])
 
     def train(self, data, batchSize=1):
-
         for instance in data.instances:
             (f, activation_matrix) = self.propagate_instance_through_network(instance)
             y = instance[data.className]
@@ -78,34 +79,35 @@ class NeuralNetWork():
         for instance in instances:
             prediction, activation_matrix = self.propagate_instance_through_network(
                 instance)
-            vector_of_classes = self.generate_vector_of_class(instance)
-            for element, a_class in zip(prediction, vector_of_classes):
-                j_value = j_value + self.j_function(element, a_class)
+            vector_of_classes = self.generate_vector_of_classes(instance)
+            for predicted_class, correct_class in zip(prediction, vector_of_classes):
+                j_value = j_value + \
+                    self.j_function(predicted_class, correct_class)
 
         j_value = j_value / number_of_instances
+        sum_weights = self.calculate_sum_network_weights(number_of_instances)
 
-        s = self.sum_network_weights(activation_matrix)
-        s = (self.regularization_factor/2*number_of_instances) * s
-
-        return j_value + s
-
-    def sum_network_weights(self, activation_matrix):
-        s = 0
-        for i, layer in enumerate(activation_matrix):
-            if i < len(activation_matrix) - 1:
-                for j in range(1, len(layer)):
-                    s = s + math.pow(layer[j], 2)
-
-        return s
+        return j_value + sum_weights
 
     def j_function(self, predicted_value, real_value):
-        j = - real_value * math.log(predicted_value) - \
+        return - real_value * math.log(predicted_value) - \
             (1 - real_value) * math.log(1 - predicted_value)
-        return j
 
-    def generate_vector_of_class(self, instance):
-        vector_of_classes = []
-        for attribute in instance:
-            if 'class' in attribute:
-                vector_of_classes.append(instance[attribute])
-        return vector_of_classes
+    def calculate_sum_network_weights(self, number_of_instances):
+        return (self.regularization_factor /
+                (2*number_of_instances)) * self.sum_network_weights()
+
+    def sum_network_weights(self):
+        sum_weights = 0
+        for layer in self.layers_matrices:
+            for neuron in layer:
+                for weight_index, weight in enumerate(neuron.A1):
+                    if weight_index == 0:
+                        continue
+                    else:
+                        sum_weights += math.pow(weight, 2)
+        return sum_weights
+
+    def generate_vector_of_classes(self, instance):
+        return [instance[attribute]
+                for attribute in instance if 'class' in attribute]
