@@ -118,22 +118,23 @@ class Data(object):
 
     # generateStratifiedBootstraps() was removed
 
-    def getAttrMatrix(self, instanceIndex):
+    @staticmethod
+    def getAttrMatrix(instance):
         values = [[1.0]]
-        for key, value in zip(self.instances[instanceIndex].keys(), 
-                              self.instances[instanceIndex].values()):
+        for key, value in zip(instance.keys(), 
+                              instance.values()):
             if 'class' not in key:
                 values.append([value])
         return np.matrix(values)
 
-    def getResultMatrix(self, instanceIndex):
+    @staticmethod
+    def getResultMatrix(instance):
         values = []
-        for key, value in zip(self.instances[instanceIndex].keys(), 
-                              self.instances[instanceIndex].values()):
+        for key, value in zip(instance.keys(), 
+                              instance.values()):
             if 'class' in key:
                 values.append([value])
         return np.matrix(values)
-
 
     def isEmpty(self):
 

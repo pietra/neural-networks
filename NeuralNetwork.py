@@ -66,6 +66,9 @@ class NeuralNetWork():
         return np.vstack([[1.0], matrices_product])
 
     def train(self, data, batchSize=1):
+        """
+        Trains the neural network using the backpropagation algorithm.
+        """
 
         totalLayers = len(self.layers_matrices) + 1
         delta = [0]*totalLayers
@@ -74,11 +77,12 @@ class NeuralNetWork():
 
         gradients = [0]*(totalLayers-1)
 
-        for instanceIndex in range(len(data.instances)):
+        # for instanceIndex in range(len(data.instances)):
+        for instanceIndex, instance in enumerate(data.instances):
             # Calculate delta for the output layer
-            instance = data.getAttrMatrix(instanceIndex)
-            a = self.propagate_instance_through_network(instance)
-            y = data.getResultMatrix(instanceIndex)
+            attrMatrix = data.getAttrMatrix(instance)
+            a = self.propagate_instance_through_network(attrMatrix)
+            y = data.getResultMatrix(instance)
             curDelta = a[-1] - y
             delta[totalLayers-1] = curDelta
 
@@ -112,6 +116,9 @@ class NeuralNetWork():
         for i in range(totalLayers-2, -1, -1):
             newThetas[i] = self.layers_matrices[i] - alpha*gradients[i]
 
+        error = self.calculate_cost_function(data.instances)
+        log.debug("Error for all instances: {}".format(error))
+
         log.debug("f = {}, y = {}".format(a[-1], y))
         # log.debug("Resulting delta: {}".format(delta))
         # log.debug("Resulting gradients: {}".format(gradients))
@@ -129,8 +136,10 @@ class NeuralNetWork():
         j_value = 0
         number_of_instances = len(instances)
         for instance in instances:
-            prediction, activation_matrix = self.propagate_instance_through_network(
-                instance)
+            attrMatrix = Data.getAttrMatrix(instance)
+            activation_matrix = self.propagate_instance_through_network(
+                attrMatrix)
+            prediction = activation_matrix[-1]
             vector_of_classes = self.generate_vector_of_classes(instance)
             for predicted_class, correct_class in zip(prediction, vector_of_classes):
                 j_value = j_value + \
