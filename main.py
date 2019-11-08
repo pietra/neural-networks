@@ -11,7 +11,7 @@ def main():
     # For tests
     sys.argv.append('entry_files/network.txt')
     sys.argv.append('entry_files/initial_weights_2.txt')
-    sys.argv.append('datasets/test2.csv')
+    sys.argv.append('datasets/test_2.csv')
 
     # 1st parameter: network.txt
     regularization_factor, networks_layers_size = read_network_file(
@@ -28,6 +28,7 @@ def main():
                                    regFactor=regularization_factor)
 
     neural_network.train(dataset)
+    j_value = neural_network.calculate_cost_function(dataset.instances)
 
 
 if __name__ == "__main__":
