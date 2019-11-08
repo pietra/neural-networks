@@ -10,8 +10,8 @@ def main():
 
     # For tests
     sys.argv.append('entry_files/network.txt')
-    sys.argv.append('entry_files/initial_weights.txt')
-    sys.argv.append('datasets/test.csv')
+    sys.argv.append('entry_files/initial_weights_2.txt')
+    sys.argv.append('datasets/test2.csv')
 
     # 1st parameter: network.txt
     regularization_factor, networks_layers_size = read_network_file(
@@ -24,12 +24,10 @@ def main():
     dataset = Data(categoricalVars=[])
     dataset.parseFromFile(sys.argv[3])
 
-    neural_network = NeuralNetWork(initial_weights, regFactor=regularization_factor)
+    neural_network = NeuralNetWork(initial_weights, 
+                                   regFactor=regularization_factor)
 
-    instance = dataset.instances[0]
-
-    (result, predictionMatrix) = neural_network.propagate_instance_through_network(instance)
-    # neural_network.train(dataset)
+    neural_network.train(dataset)
 
 
 if __name__ == "__main__":

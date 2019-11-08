@@ -1,15 +1,14 @@
 import csv
 import random
+import numpy as np
 from math import floor
 
 
 class Data(object):
 
-    def __init__(self, className='class', categoricalVars=[]):
-        self.className = className
+    def __init__(self, classNames=['class'], categoricalVars=[]):
         self.keys = []
         self.instances = []
-        self.attributes = []
 
         if isinstance(categoricalVars, list):
             self.categoricalAttr = categoricalVars
@@ -21,17 +20,13 @@ class Data(object):
         self.categoricalAttr = categoricalVars
 
     def __repr__(self):
-        return "<Data {} -> {}>".format(self.attributes, self.className)
+        return "<Data {} instances>".format(len(self.instances))
 
     def addInstance(self, newInstance):
 
         if len(self.instances) == 0:
             # First instance
             [self.keys.append(x) for x in newInstance.keys()]
-
-            for x in newInstance.keys():
-                if x != self.className:
-                    self.attributes.append(x)
 
         elif self.instances[-1].keys() != newInstance.keys():
             # Validate keys
@@ -50,16 +45,6 @@ class Data(object):
                 valueList.append(row[attr])
         return valueList
 
-    def listClassValues(self):
-        """
-        Returns a list containing all the possible class values
-        """
-        classList = []
-        for row in self.instances:
-            if row[self.className] not in classList:
-                classList.append(row[self.className])
-        return classList
-
     def parseFromFile(self, filename, delimiter=',', quotechar='"'):
 
         reader = csv.DictReader(open(filename, mode='r'), delimiter=delimiter, 
@@ -71,40 +56,6 @@ class Data(object):
                     row[key] = float(row[key])
 
             self.addInstance(dict(row))
-
-    def uniformClass(self):
-        """
-        Checks if there is more than one class value in the dataset.
-        :returns: True if data is uniform, False otherwise
-        """
-        value = self.instances[0][self.className]
-        for entry in self.instances:
-            if entry[self.className] != value:
-                return False
-
-        return True
-
-    def mostFrequentClass(self):
-        """
-        Returns the most frequent value for the dataset class.
-        """
-        if len(self.instances) == 0:
-            raise ValueError("Data object has no instances, cannot find most frequent\
-                             class")
-        # Count the number of occurances
-        countDic = {}
-        for entry in self.instances:
-            if entry[self.className] in countDic.keys():
-                countDic[entry[self.className]] += 1
-            else:
-                countDic[entry[self.className]] = 1
-        # Find highest
-        highest = ("", 0)
-        for key in countDic:
-            if countDic[key] > highest[1]:
-                highest = (key, countDic[key])
-        
-        return highest[0]
 
     def calculateMean(self, attrName):
         """
@@ -145,40 +96,7 @@ class Data(object):
 
         return folds
 
-    def generateStratifiedFolds(self, k=1, discardExtras=False):
-        '''
-        Generates 'k' stratified sets of instances without repetition.
-        WARNING: setting 'discardExtras' to False will cause folds to have different sizes if the number of instances isn't divisible by 'k'.
-        Returns the list of folds.
-        '''
-
-        classValueDistribution = {}
-        for value in self.listClassValues(): #For each possible class value
-            matchingInstances = [instance for instance in self.instances if instance[self.className] == value] #Instances that have the matching value
-            classValueDistribution[value] = len(matchingInstances)/len(self.instances)  #Percentage of instances that have this value
-
-        instancesCopy = self.instances.copy()   #Pool of instances that haven't been picked
-        folds = []
-        for i in range(k):
-            folds.append([])    #New fold
-
-            for value in self.listClassValues(): #For each possible class value
-                matchingInstances = [instance for instance in instancesCopy if instance[self.className] == value] #Instances that have the matching value
-
-                #Adds matching instances to the fold keeping the same value proportion as the full data set
-                for j in range(floor((len(self.instances)/k) * classValueDistribution[value])):
-                    selectedInstance = matchingInstances.pop(random.randint(0, len(matchingInstances)-1))   #Selects random matching instance
-                    folds[i].append(selectedInstance)   #Adds selected instance to the fold
-                    instancesCopy.remove(selectedInstance)  #Removes selected instance from the pool
-
-        #Evenly distributes the remaining instances. Will cause some folds to have 1 more instance than others if the number of instances isn't divisible by 'k'.
-        if discardExtras == False:
-            while len(instancesCopy) != 0:
-                for i in range(k):
-                    if(len(instancesCopy) != 0):
-                        folds[i].append(instancesCopy.pop(random.randint(0, len(instancesCopy)-1)))
-
-        return folds
+    # generateStratifiedFolds was removed
 
     def generateBootstraps(self, k=1):
         '''
@@ -198,27 +116,24 @@ class Data(object):
 
         return bootstraps
 
-    def generateStratifiedBootstraps(self, k=1):
-        '''
-        Generates 'k' stratfied sets of instances with repetition for the training set and sets of instances that aren't in the training set for the testing set.
-        Returns the list of bootstraps. Each bootstrap is a tuple with a list of training instances (index 0) and a list of testing instances (index 1).
-        '''
-        bootstraps = []
-        for i in range(k):  #For each bootstrap
-            bootstraps.append( ([], []) )   #Adds a new bootstrap
+    # generateStratifiedBootstraps() was removed
 
-            for value in self.listClassValues(): #For each possible class value
-                matchingInstances = [instance for instance in self.instances if instance[self.className] == value] #Instances that have the matching value
+    def getAttrMatrix(self, instanceIndex):
+        values = [[1.0]]
+        for key, value in zip(self.instances[instanceIndex].keys(), 
+                              self.instances[instanceIndex].values()):
+            if 'class' not in key:
+                values.append([value])
+        return np.matrix(values)
 
-                #Add to the bootstrap the same number of instances with that value that are in the data set
-                for j in range(len(matchingInstances)):
-                    bootstraps[i][0].append(matchingInstances[random.randint(0, len(matchingInstances)-1)])    #Adds a random instance from the matching instances to the training list
+    def getResultMatrix(self, instanceIndex):
+        values = []
+        for key, value in zip(self.instances[instanceIndex].keys(), 
+                              self.instances[instanceIndex].values()):
+            if 'class' in key:
+                values.append([value])
+        return np.matrix(values)
 
-            for j in range(len(self.instances)):    #Goes through every instance again
-                if self.instances[j] not in bootstraps[i][0]:   #Checks for instances that weren't picked for the training list
-                    bootstraps[i][1].append(self.instances[j])  #Adds the instance to the testing list
-
-        return bootstraps
 
     def isEmpty(self):
 
@@ -233,3 +148,4 @@ class Data(object):
             return False
         else:
             return True
+
