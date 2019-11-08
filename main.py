@@ -9,9 +9,9 @@ def main():
     print("Starting Neural Networks Algorithm...")
 
     # For tests
-    sys.argv.append('entry_files/network_2.txt')
-    sys.argv.append('entry_files/initial_weights_2.txt')
-    sys.argv.append('datasets/test_2.csv')
+    sys.argv.append('entry_files/network.txt')
+    sys.argv.append('entry_files/initial_weights.txt')
+    sys.argv.append('datasets/test.csv')
 
     # 1st parameter: network.txt
     regularization_factor, networks_layers_size = read_network_file(

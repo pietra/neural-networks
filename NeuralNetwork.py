@@ -77,7 +77,6 @@ class NeuralNetWork():
 
         gradients = [0]*(totalLayers-1)
 
-        # for instanceIndex in range(len(data.instances)):
         for instanceIndex, instance in enumerate(data.instances):
             # Calculate delta for the output layer
             attrMatrix = data.getAttrMatrix(instance)
@@ -85,6 +84,9 @@ class NeuralNetWork():
             y = data.getResultMatrix(instance)
             curDelta = a[-1] - y
             delta[totalLayers-1] = curDelta
+
+            error = self.calculate_cost_function([instance])
+            log.debug("Error for instance {}: {}".format(instanceIndex+1, error))
 
             # (1.3) Calculate delta for the hidden layers
             for i in range(totalLayers-2, 0, -1):
@@ -116,7 +118,7 @@ class NeuralNetWork():
         for i in range(totalLayers-2, -1, -1):
             newThetas[i] = self.layers_matrices[i] - alpha*gradients[i]
 
-        error = self.calculate_cost_function(data.instances)
+        error = self.calculate_cost_function(data.instances, applyReg=True)
         log.debug("Error for all instances: {}".format(error))
 
         log.debug("f = {}, y = {}".format(a[-1], y))
@@ -132,7 +134,11 @@ class NeuralNetWork():
             for row in gradients[i]:
                 print(row)
 
-    def calculate_cost_function(self, instances):
+    def calculate_cost_function(self, instances, applyReg=False):
+        """
+        Calcultes the cost for a list of instances.
+        applyReg: if true, the sum of network weights will be used (regulariza.)
+        """
         j_value = 0
         number_of_instances = len(instances)
         for instance in instances:
@@ -146,9 +152,11 @@ class NeuralNetWork():
                     self.j_function(predicted_class, correct_class)
 
         j_value = j_value / number_of_instances
-        sum_weights = self.calculate_sum_network_weights(number_of_instances)
-
-        return j_value + sum_weights
+        if applyReg:
+            sum_weights = self.calculate_sum_network_weights(number_of_instances)
+            return j_value + sum_weights
+        else:
+            return j_value
 
     def j_function(self, predicted_value, real_value):
         return - real_value * math.log(predicted_value) - \
