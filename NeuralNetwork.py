@@ -13,7 +13,7 @@ log = logging.getLogger('neural-network')
 log.setLevel(logging.DEBUG)
 # ch = logging.FileHandler('neural-network.log')
 ch = logging.StreamHandler()
-formatter = logging.Formatter('%(levelname)s - %(message)s')
+formatter = logging.Formatter('%(message)s')
 ch.setFormatter(formatter)
 log.addHandler(ch)
 # log.info('New log ---------------------------------------')
@@ -31,7 +31,12 @@ class NeuralNetWork():
             matrix = np.matrix([neuron for neuron in layer.values()])
             self.layers_matrices.append(matrix)
 
-        # log.debug('Resulting neural network:\n {}'.format(self.layers_matrices))
+        # log.debug("------ Neural network structure:")
+        # for layerIndex in range(len(self.layers_matrices)):
+        #     log.debug("Theta{}".format(layerIndex+1))
+        #     for row in self.layers_matrices[layerIndex]:
+        #         log.debug(row)
+
 
     def propagate_instance_through_network(self, instance_matrix, debug=False):
 
@@ -51,7 +56,7 @@ class NeuralNetWork():
             # Append matrix product
             activation_matrix.append(matrices_product)
 
-        printMatrix(activation_matrix, 'a', log)
+        # printMatrix(activation_matrix, 'a', log)
         return activation_matrix
 
     def calculate_sigmoide(self, product_matrix):
@@ -118,21 +123,71 @@ class NeuralNetWork():
         for i in range(totalLayers-2, -1, -1):
             newThetas[i] = self.layers_matrices[i] - alpha*gradients[i]
 
+        # Calculate error for validation
         error = self.calculate_cost_function(data.instances, applyReg=True)
         log.debug("Error for all instances: {}".format(error))
-
-        log.debug("f = {}, y = {}".format(a[-1], y))
+        # log.debug("f = {}, y = {}".format(a[-1], y))
         # log.debug("Resulting delta: {}".format(delta))
         # log.debug("Resulting gradients: {}".format(gradients))
         # log.debug("Resulting thetas: {}".format(newThetas))
         # log.debug("Original thetas: {}".format(self.layers_matrices))
 
+        log.debug("---- Numeric gradients calculated via backpropagation")
         for i in range(totalLayers-1):
-
-            s = "Gradiente numerico de Theta{}:".format(i)
-            print(s)
+            s = "Numeric gradient for Theta{}:".format(i)
+            log.debug(s)
             for row in gradients[i]:
-                print(row)
+                log.debug(row)
+
+        return gradients
+
+    def numeric_gradient_estimate(self, data, epsilon=0.000001):
+
+        gradients = []
+        # Iterate over every weight in the neural network
+        for layerIndex, layer in enumerate(self.layers_matrices):
+
+            (rows, cols) = layer.shape
+            gradMatrix = np.matrix([[0.0]*cols]*rows)
+            for rowInd in range(rows):
+                for colInd in range(cols):
+
+                    curTheta = self.layers_matrices[layerIndex][rowInd,colInd]
+                    # Calculate error for theta + epsilon
+                    self.layers_matrices[layerIndex][rowInd,colInd] = curTheta + epsilon
+                    j_plus = self.calculate_cost_function(data.instances, applyReg=True)
+                    # Calculate error for theta - epsilon
+                    self.layers_matrices[layerIndex][rowInd,colInd] = curTheta - epsilon
+                    j_minus = self.calculate_cost_function(data.instances, applyReg=True)
+                    # Calculate gradient
+                    gradMatrix.itemset((rowInd, colInd), (j_plus - j_minus)/(2*epsilon))
+                
+                    # Rewrite original network weight
+                    self.layers_matrices[layerIndex][rowInd,colInd] = curTheta
+                
+            gradients.append(gradMatrix)
+
+        log.debug("----- Numeric gradient estimate (epsilon={})".format(epsilon))
+        for layerIndex in range(len(gradients)):
+            log.debug("Numeric gradient estimate for Theta{}".format(layerIndex+1))
+            for row in gradients[layerIndex]:
+                log.debug(row)
+
+        return gradients
+
+    def gradient_difference(self, backprop, estimate):
+
+        for i in range(len(backprop)):
+
+            diff = backprop[i] - estimate[i]
+
+            (rows, cols) = diff.shape
+            acc = 0
+            for rowInd in range(rows):
+                for colInd in range(cols):
+                    acc += diff[rowInd,colInd]
+
+            log.debug("Diff for layer '{}' = {}".format(i+1, acc))
 
     def calculate_cost_function(self, instances, applyReg=False):
         """
