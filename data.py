@@ -150,3 +150,17 @@ class Data(object):
         else:
             return True
 
+    def normalizeAttributes(self, maxValue=1):
+        """
+        Normalizes all attributes to be a value between 0 an 'maxValue'.
+        """
+        #Goes through every instance and finds the highest value for each attribute
+        maxValues = {}
+        for key in self.keys:
+            maxValues[key] = max(instance[key] for instance in self.instances)  #Gets the max value of specified attribute
+
+        print("Instances pre normalization: {}".format(self.instances))
+
+        for instance in self.instances:
+            for key in self.keys:
+                instance[key] = (instance[key] / maxValues[key]) * maxValue

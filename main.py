@@ -23,6 +23,7 @@ def main():
     # 3rd parameter: dataset.csv
     dataset = Data(categoricalVars=[])
     dataset.parseFromFile(sys.argv[3])
+    dataset.normalizeAttributes()
 
     neural_network = NeuralNetWork(initial_weights, 
                                    regFactor=regularization_factor)
