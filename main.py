@@ -29,9 +29,7 @@ def main():
     neural_network = NeuralNetWork(initial_weights, 
                                    regFactor=regularization_factor)
 
-    realGrads = neural_network.train(dataset)
-    estimateGrads = neural_network.numeric_gradient_estimate(dataset)
-    # neural_network.gradient_difference(realGrads, estimateGrads)
+    realGrads = neural_network.train(dataset, checkGradients=False)
     # j_value = neural_network.calculate_cost_function(dataset.instances)
 
 def evaluate_performance():

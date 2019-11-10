@@ -25,6 +25,8 @@ class NeuralNetWork():
         self.layers_matrices = []
         self.create_layers_matrixes(initial_weights)
         self.regularization_factor = regFactor
+        # Set decimals cases shown as output for numpy
+        np.set_printoptions(precision=3)
 
     def create_layers_matrixes(self, initial_weights):
         for layer in initial_weights.values():
@@ -69,7 +71,7 @@ class NeuralNetWork():
     def add_bias_term(self, matrices_product):
         return np.vstack([[1.0], matrices_product])
 
-    def train(self, data, batchSize=1):
+    def train(self, data, batchSize=1, checkGradients=False):
         """
         Trains the neural network using the backpropagation algorithm.
         """
@@ -90,7 +92,7 @@ class NeuralNetWork():
             delta[totalLayers-1] = curDelta
 
             error = self.calculate_cost_function([instance])
-            log.debug("Error for instance {}: {}".format(instanceIndex+1, error))
+            # log.debug("Error for instance {}: {}".format(instanceIndex+1, error))
 
             # (1.3) Calculate delta for the hidden layers
             for i in range(totalLayers-2, 0, -1):
@@ -116,6 +118,9 @@ class NeuralNetWork():
             # (2.2) Combine gradients and regularization, calculate mean grad.
             gradients[i] = (1/numExamples)*(gradients[i] + curP)
 
+        if checkGradients:
+            self.numeric_gradient_check(data, backprop=gradients)
+
         # (4) Update the weights(thetas) for each layer
         newThetas = [0]*len(self.layers_matrices)
         alpha = 1
@@ -124,7 +129,7 @@ class NeuralNetWork():
 
         # Calculate error for validation
         error = self.calculate_cost_function(data.instances, applyReg=True)
-        log.debug("Error for all instances: {}".format(error))
+        # log.debug("Error for all instances: {}".format(error))
         # log.debug("f = {}, y = {}".format(a[-1], y))
         # log.debug("Resulting delta: {}".format(delta))
         # log.debug("Resulting gradients: {}".format(gradients))
@@ -140,7 +145,12 @@ class NeuralNetWork():
 
         return gradients
 
-    def numeric_gradient_estimate(self, data, epsilon=0.000001):
+    def numeric_gradient_check(self, data, epsilon=0.000001, backprop=None):
+        """
+        Numerically calculates the gradients for the entire network.
+        :param backprop: gradients calculated via backpropagation, if none is 
+        given, the difference will not be calculated
+        """
 
         gradients = []
         # Iterate over every weight in the neural network
@@ -172,21 +182,18 @@ class NeuralNetWork():
             for row in gradients[layerIndex]:
                 log.debug(row)
 
+        if backprop:
+            # Calculate gradient difference
+            log.debug("----- Running gradient diff")
+            for i in range(len(gradients)):
+
+                diff = backprop[i] -  gradients[i]
+
+                log.debug("Gradient diff for layer {}".format(i+1))
+                for row in diff:
+                    log.debug(row)
+
         return gradients
-
-    def gradient_difference(self, backprop, estimate):
-
-        for i in range(len(backprop)):
-
-            diff = backprop[i] - estimate[i]
-
-            (rows, cols) = diff.shape
-            acc = 0
-            for rowInd in range(rows):
-                for colInd in range(cols):
-                    acc += diff[rowInd,colInd]
-
-            log.debug("Diff for layer '{}' = {}".format(i+1, acc))
 
     def calculate_cost_function(self, instances, applyReg=False):
         """
