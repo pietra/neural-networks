@@ -57,6 +57,11 @@ def evaluatePerformance():
     #Generates testing/training folds
     num_folds = 2
     folds = dataset.generateFolds(num_folds)
+
+    #Analyzes network performance using each fold as testing data once
+    allPerformances = []
+    allPrecisions = []
+    allRecalls = []
     for i in range(num_folds):
         print("")
         print("----- Test run {} of {} -----".format(i+1, num_folds))
@@ -77,15 +82,49 @@ def evaluatePerformance():
 
         #v---v THE REST OF THIS FUNCTION IS UNTESTED AS THE PROPAGATION DOESN'T WORK YET v---v
 
-        #Propagates testing data through the network
-        true_positives = 0
-        false_positives = 0
-        true_negatives = 0
-        false_negatives = 0
-        for instance in testing_data.instances:
-            output = neural_network.propagate_instance_through_network(instance)
-            #TODO: compare network output with correct result
-            #TODO: update TP, FP, TN, FN numbers
+        runPerformances = []
+        runPrecisions = []
+        runRecalls = []
+        #TODO: loop this taking every possible output as the positive class once
+            true_positives = 0
+            false_positives = 0
+            true_negatives = 0
+            false_negatives = 0
+            for instance in testing_data.instances:
+                output = neural_network.propagate_instance_through_network(instance)
+                #TODO: compare network output with correct result
+                #TODO: update TP, FP, TN, FN numbers
+
+            #Adds results to this run's results
+            runPerformances.append((truePositives+trueNegatives)/len(predictions))    #Right guesses
+            runPrecisions.append(truePositives / (truePositives + falsePositives))    #Right guesses from instances guessed positive
+            runRecalls.append(truePositives / (truePositives + falseNegatives))   #Right guesses from instances that were supposed to be positive
+
+        #Calculates average performance, recall and precision for this run
+        runAvgPerformance = sum(runPerformances)/len(runPerformances)
+        runAvgPrecision = sum(runPrecisions)/len(runPrecisions)
+        runAvgRecall = sum(runRecalls)/len(runRecalls)
+
+        print("Network performance: {:.2f}% of guesses (precision: {:.2f}% / recall: {:.2f}%)".format(runAvgPerformance*100, runAvgPrecision*100, runAvgRecall*100))
+
+        allPerformances.append(runAvgPerformance)   #Adds this run's performance to the list
+        allPrecisions.append(runAvgPrecision)   #Adds this run's precision to the list
+        allRecalls.append(runAvgRecall)   #Adds this run's recall to the list
+
+    #Calculates averages for all runs
+    avgPerformance = sum(allPerformances)/len(allPerformances)
+    avgPrecision = sum(allPrecisions)/len(allPrecisions)
+    avgRecall = sum(allRecalls)/len(allRecalls)
+    #Calculates F1-Measure for all runs
+    f1 = (2*avgPrecision*avgRecall) / (avgPrecision+avgRecall)
+
+    print("")
+    print("----- FINAL PERFORMANCE -----")
+    print("")
+    print("Network's average performance: {:.2f}% (precision: {:.2f}% / recall: {:.2f}%)".format(avgPerformance*100, avgPrecision*100, avgRecall*100))
+    print("F1-measure from averages: {:.2f}%".format(f1*100))
+
+
 
 
 if __name__ == "__main__":
