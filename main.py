@@ -34,7 +34,7 @@ def main():
     # neural_network.gradient_difference(realGrads, estimateGrads)
     # j_value = neural_network.calculate_cost_function(dataset.instances)
 
-def evaluatePerformance():
+def evaluate_performance():
     # For tests
     sys.argv.append('entry_files/network_2.txt')
     sys.argv.append('entry_files/initial_weights_2.txt')
@@ -132,5 +132,5 @@ def evaluatePerformance():
 
 
 if __name__ == "__main__":
-    #main()
-    evaluatePerformance()
+    main()
+    #evaluate_performance()
