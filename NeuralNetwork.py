@@ -37,7 +37,6 @@ class NeuralNetWork():
         #     for row in self.layers_matrices[layerIndex]:
         #         log.debug(row)
 
-
     def propagate_instance_through_network(self, instance_matrix, debug=False):
 
         # log.debug('Propagating: {}'.format(instance_matrix))

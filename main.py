@@ -3,6 +3,7 @@ import sys
 from files_reader import read_network_file, read_initial_weights_file, read_dataset_file
 from NeuralNetwork import NeuralNetWork
 from data import Data
+from util import return_matrix_of_instance_values
 
 
 def main():
@@ -80,7 +81,10 @@ def evaluatePerformance():
         neural_network.train(training_data)
         neural_network.numeric_gradient_estimate(training_data)
 
-        #v---v THE REST OF THIS FUNCTION IS UNTESTED AS THE PROPAGATION DOESN'T WORK YET v---v
+        print(neural_network.propagate_instance_through_network(return_matrix_of_instance_values(testing_data.instances[0])))
+
+    '''
+        #v---v THE REST OF THIS FUNCTION IS UNTESTED AND A WORK IN PROGRESS v---v
 
         runPerformances = []
         runPrecisions = []
@@ -123,10 +127,10 @@ def evaluatePerformance():
     print("")
     print("Network's average performance: {:.2f}% (precision: {:.2f}% / recall: {:.2f}%)".format(avgPerformance*100, avgPrecision*100, avgRecall*100))
     print("F1-measure from averages: {:.2f}%".format(f1*100))
-
+    '''
 
 
 
 if __name__ == "__main__":
-    main()
-    #evaluatePerformance()
+    #main()
+    evaluatePerformance()
