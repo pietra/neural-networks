@@ -21,12 +21,15 @@ log.addHandler(ch)
 
 class NeuralNetWork():
 
+    gradient_output_filename = "backprop_gradients.out"
+    numpy_precision = 5
+
     def __init__(self, initial_weights, regFactor=0):
         self.layers_matrices = []
         self.create_layers_matrixes(initial_weights)
         self.regularization_factor = regFactor
         # Set decimals cases shown as output for numpy
-        np.set_printoptions(precision=3)
+        np.set_printoptions(precision=self.numpy_precision)
 
     def create_layers_matrixes(self, initial_weights):
         for layer in initial_weights.values():
@@ -143,8 +146,6 @@ class NeuralNetWork():
             for row in gradients[i]:
                 log.debug(row)
 
-        return gradients
-
     def numeric_gradient_check(self, data, epsilon=0.000001, backprop=None):
         """
         Numerically calculates the gradients for the entire network.
@@ -175,14 +176,30 @@ class NeuralNetWork():
                     self.layers_matrices[layerIndex][rowInd,colInd] = curTheta
                 
             gradients.append(gradMatrix)
-
-        log.debug("----- Numeric gradient estimate (epsilon={})".format(epsilon))
-        for layerIndex in range(len(gradients)):
-            log.debug("Numeric gradient estimate for Theta{}".format(layerIndex+1))
-            for row in gradients[layerIndex]:
-                log.debug(row)
-
+                
         if backprop:
+            # Write output file in the same format as initial_weights
+            fh = open(self.gradient_output_filename, 'w')
+            log.debug("----- Numeric gradient estimate (epsilon={})".format(epsilon))
+            for layerIndex in range(len(gradients)):
+                log.debug("Numeric gradient estimate for Theta{}".format(layerIndex+1))
+                (numRows, numCols) = gradients[layerIndex].shape
+                line = ""
+                for rowInd in range(numRows):
+                    log.debug(gradients[layerIndex][rowInd, :])
+                    for colInd in range(numCols):
+                        line += "%.5f" %(gradients[layerIndex][rowInd, colInd])
+
+                        # Coma separated row values
+                        if colInd < numCols - 1:
+                            line += ", "
+                    # Semicolumn separated rows
+                    if rowInd < numRows-1:
+                        line += "; "
+                    
+                fh.write(line + '\n')
+            fh.close()
+
             # Calculate gradient difference
             log.debug("----- Running gradient diff")
             for i in range(len(gradients)):

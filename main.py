@@ -9,6 +9,8 @@ from util import return_matrix_of_instance_values
 def main():
     print("Starting Neural Networks Algorithm...")
 
+    checkGradients = False
+
     # For tests
     sys.argv.append('entry_files/network_2.txt')
     sys.argv.append('entry_files/initial_weights_2.txt')
@@ -24,13 +26,14 @@ def main():
     # 3rd parameter: dataset.csv
     dataset = Data(categoricalVars=[])
     dataset.parseFromFile(sys.argv[3])
-    dataset.normalizeAttributes()
+    # dataset.normalizeAttributes()
 
     neural_network = NeuralNetWork(initial_weights, 
                                    regFactor=regularization_factor)
 
-    realGrads = neural_network.train(dataset, checkGradients=False)
+    neural_network.train(dataset, checkGradients=False)
     # j_value = neural_network.calculate_cost_function(dataset.instances)
+
 
 def evaluate_performance():
     # For tests
