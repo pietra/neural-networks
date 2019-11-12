@@ -9,6 +9,7 @@ class Data(object):
     def __init__(self, classNames=['class'], categoricalVars=[]):
         self.keys = []
         self.instances = []
+        self.classNames = classNames
 
         if isinstance(categoricalVars, list):
             self.categoricalAttr = categoricalVars
@@ -44,6 +45,19 @@ class Data(object):
             if row[attr] not in valueList:
                 valueList.append(row[attr])
         return valueList
+
+    def listClassValues(self):
+        """
+        Returns a list containing all the possible class values
+        """
+        values = []
+        print(self.classNames)
+        for instance in self.instances:
+            for className in self.classNames:
+                if instance[className] not in values:
+                    values.append(instance[className])
+
+        return values
 
     def parseFromFile(self, filename, delimiter=',', quotechar='"'):
 
