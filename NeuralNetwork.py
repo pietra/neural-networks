@@ -47,6 +47,8 @@ class NeuralNetWork():
                 if numCols != structure[i]+1 or numRows != structure[i+1]:
                     raise ValueError("Network structure and initial weights do not" + \
                                      "match for layer {}".format(i+1))
+
+            log.debug("Weight matrixes initialized with pre-defined values")
         else:
             # Initialize weights with random values
             for i in range(len(structure) - 1):
@@ -57,7 +59,12 @@ class NeuralNetWork():
                 self.layers_matrices.append(np.matrix([[0.0]*numCols]*numRows))
                 for j in range(numRows):
                     for k in range(numCols):
-                        self.layers_matrices[-1][j, k] = random.uniform(0.001, 1)
+                        buf = random.uniform(-1, 1)
+                        buf = 0.001 if buf == 0 else buf
+                        self.layers_matrices[-1][j, k] = buf
+
+            log.debug("Weight matrixes initialized with random values between -1 and 1")
+                        
 
         # log.debug("------ Neural network structure:")
         # for layerIndex in range(len(self.layers_matrices)):
@@ -97,7 +104,7 @@ class NeuralNetWork():
     def add_bias_term(self, matrices_product):
         return np.vstack([[1.0], matrices_product])
 
-    def train(self, data, batchSize=0, checkGradients=False):
+    def train(self, data, batchSize=0, checkGradients=False, alpha=1):
         """
         Trains the neural network using the backpropagation algorithm.
         """
@@ -132,6 +139,7 @@ class NeuralNetWork():
         iterCount = 0
         lastMean = 0
         newMean = 0
+        trainingRuns = 0
         while not trainingDone:
 
             for iterCount in range(numBatches):
@@ -175,7 +183,9 @@ class NeuralNetWork():
                     gradients[i] = (1/batchSize)*(gradients[i] + curP)
 
                 if checkGradients:
-                    self.numeric_gradient_check(data, backprop=gradients)
+                    self.numeric_gradient_check(data, gradients)
+                    if trainingRuns == 0:
+                        self.output_gradients_to_file(gradients)
 
                 # Calculate error for validation
                 curError = self.calculate_cost_function(batchInstances, 
@@ -207,13 +217,10 @@ class NeuralNetWork():
                 lastMean = newMean
 
                 # (4) Update the weights(thetas) for each layer
-                newThetas = [0]*len(self.layers_matrices)
-                alpha = 1
                 for i in range(totalLayers-2, -1, -1):
-                    # newThetas[i] = self.layers_matrices[i] - alpha*gradients[i]
                     self.layers_matrices[i] = self.layers_matrices[i] - alpha*gradients[i]
 
-            iterCount += 1
+            trainingRuns += 1
 
         # log.debug("f = {}, y = {}".format(a[-1], y))
         # log.debug("Resulting delta: {}".format(delta))
@@ -228,11 +235,9 @@ class NeuralNetWork():
         #     for row in gradients[i]:
         #         log.debug(row)
 
-    def numeric_gradient_check(self, data, epsilon=0.000001, backprop=None):
+    def numeric_gradient_check(self, data, backprop, epsilon=0.000001):
         """
         Numerically calculates the gradients for the entire network.
-        :param backprop: gradients calculated via backpropagation, if none is 
-        given, the difference will not be calculated
         """
         gradients = []
         # Iterate over every weight in the neural network
@@ -252,46 +257,51 @@ class NeuralNetWork():
                     j_minus = self.calculate_cost_function(data.instances, applyReg=True)
                     # Calculate gradient
                     gradMatrix.itemset((rowInd, colInd), (j_plus - j_minus)/(2*epsilon))
-                
                     # Rewrite original network weight
                     self.layers_matrices[layerIndex][rowInd,colInd] = curTheta
                 
-            gradients.append(gradMatrix)
-                
-        if backprop:
-            # Write output file in the same format as initial_weights
-            fh = open(self.gradient_output_filename, 'w')
-            log.debug("----- Numeric gradient estimate (epsilon={})".format(epsilon))
-            for layerIndex in range(len(gradients)):
-                log.debug("Numeric gradient estimate for Theta{}".format(layerIndex+1))
-                (numRows, numCols) = gradients[layerIndex].shape
-                line = ""
-                for rowInd in range(numRows):
-                    log.debug(gradients[layerIndex][rowInd, :])
-                    for colInd in range(numCols):
-                        line += "%.5f" %(gradients[layerIndex][rowInd, colInd])
-
-                        # Coma separated row values
-                        if colInd < numCols - 1:
-                            line += ", "
-                    # Semicolumn separated rows
-                    if rowInd < numRows-1:
-                        line += "; "
-                    
-                fh.write(line + '\n')
-            fh.close()
-
-            # Calculate gradient difference
-            log.debug("----- Running gradient diff")
-            for i in range(len(gradients)):
-
-                diff = backprop[i] -  gradients[i]
-
-                log.debug("Gradient diff for layer {}".format(i+1))
-                for row in diff:
-                    log.debug(row)
+            gradients.append(gradMatrix)        
+        
+        # Calculate gradient difference
+        log.debug("----- Difference between numeric and backpropagation gradients")
+        for i in range(len(gradients)):
+            diff = backprop[i] -  gradients[i]
+            # diff = gradients[i] -  backprop[i]
+            
+            numRows, numCols = diff.shape
+            mean = 0
+            for rowInd in range(numRows):
+                for colInd in range(numCols):
+                    mean += diff[rowInd, colInd]
+            mean = mean/(numRows*numCols)
+            log.debug("Gradient diff for layer {} = {}".format(i+1, mean))
+            # for row in diff:
+            #     log.debug(row)
 
         return gradients
+
+    def output_gradients_to_file(self, gradients):
+
+        # Write output file in the same format as initial_weights
+        fh = open(self.gradient_output_filename, 'w')
+        log.debug("----- Gradients calculated via backpropagation")
+        for layerIndex in range(len(gradients)):
+            log.debug("Gradients for Theta{}".format(layerIndex+1))
+            (numRows, numCols) = gradients[layerIndex].shape
+            line = ""
+            for rowInd in range(numRows):
+                log.debug(gradients[layerIndex][rowInd, :])
+                for colInd in range(numCols):
+                    line += "%.5f" %(gradients[layerIndex][rowInd, colInd])
+                    # Coma separated row values
+                    if colInd < numCols - 1:
+                        line += ", "
+                # Semicolumn separated rows
+                if rowInd < numRows-1:
+                    line += "; "
+                
+            fh.write(line + '\n')
+        fh.close()
 
     def calculate_cost_function(self, instances, applyReg=False):
         """

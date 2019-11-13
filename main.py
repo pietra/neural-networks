@@ -1,36 +1,87 @@
 #!/usr/bin/python3
-import sys
+import getopt, sys
 from files_reader import read_network_file, read_initial_weights_file, read_dataset_file
 from NeuralNetwork import NeuralNetWork
 from data import Data
 from util import return_matrix_of_instance_values
 
 
+def usage():
+    s = "Backpropagation usage:\n" +\
+        "\t./backpropagation network.txt initial_weights.txt dataset.txt\n" +\
+        "Or\n" +\
+        "\t./backpropagation network.txt dataset.txt\n" +\
+        "Other options:\n" +\
+        "\t-g: Run a numeric gradient check and output the gradients\n" +\
+        "\tcalculated via backpropagation to a file named \n" +\
+        "\tbackprop_gradients.out\n" +\
+        "\t-h or --help: Show this message"
+
+    print(s)
+
+
 def main():
-    print("Starting Neural Networks Algorithm...")
 
     checkGradients = False
+    inputFiles = []
 
     # For tests
     sys.argv.append('entry_files/network_2.txt')
     sys.argv.append('entry_files/initial_weights_2.txt')
     sys.argv.append('datasets/test_2.csv')
 
+    # Separate network.txt, initial_weights.txt and dataset.txt
+    for arg in sys.argv[1:]:
+        if arg.endswith('.txt') or arg.endswith('.csv'):
+            inputFiles.append(arg)
+
+    # Validate input files
+    networkFile = initialWeightsFile = datasetFile = None
+    if len(inputFiles) == 3:
+        # network, initial_weights and dataset specified
+        networkFile = inputFiles[0]
+        initialWeightsFile = inputFiles[1]
+        datasetFile = inputFiles[2]
+    elif len(inputFiles) == 2:
+        # network and dataset specified
+        networkFile = inputFiles[0]
+        datasetFile = inputFiles[1]
+    else:
+        print("Error parsing input files")
+        usage()
+        sys.exit()      
+
+    # Parse other parameters
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hg", ["help"])
+    except getopt.GetoptError as err:
+        print("Error parsing parameters")
+        usage()
+        sys.exit()
+    for o, a in opts:
+        if o == '-g':
+            checkGradients = True
+        elif o in ('-h', '--help'):
+            usage()
+
+    print("Starting Neural Networks Algorithm...")
     # 1st parameter: network.txt
-    regularization_factor, networks_layers_size = read_network_file(sys.argv[1])
+    regularization_factor, networks_layers_size = read_network_file(networkFile)
 
     # 2nd parameter: initial_weights.txt
-    initial_weights = read_initial_weights_file(sys.argv[2])
+    if initialWeightsFile:
+        initial_weights = read_initial_weights_file(initialWeightsFile)
+    else:
+        initial_weights = []
 
     # 3rd parameter: dataset.csv
     dataset = Data(categoricalVars=[])
-    dataset.parseFromFile(sys.argv[3])
+    dataset.parseFromFile(datasetFile)
     # dataset.normalizeAttributes()
 
-    # neural_network = NeuralNetWork(networks_layers_size, initial_weights=initial_weights, regFactor=regularization_factor)
-    neural_network = NeuralNetWork(networks_layers_size, regFactor=regularization_factor)
+    neural_network = NeuralNetWork(networks_layers_size, initial_weights=initial_weights, regFactor=regularization_factor)
 
-    neural_network.train(dataset, batchSize=2, checkGradients=False)
+    neural_network.train(dataset, batchSize=0, checkGradients=checkGradients)
     # j_value = neural_network.calculate_cost_function(dataset.instances)
 
 
@@ -142,7 +193,6 @@ def evaluate_performance():
     print("Network's average performance: {:.2f}% (precision: {:.2f}% / recall: {:.2f}%)".format(avgPerformance*100, avgPrecision*100, avgRecall*100))
     print("F1-measure from averages: {:.2f}%".format(f1*100))
     '''
-
 
 
 if __name__ == "__main__":
