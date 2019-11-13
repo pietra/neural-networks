@@ -1,6 +1,6 @@
 import math
 import logging
-
+import random
 from functools import reduce
 import numpy as np
 import logging
@@ -28,13 +28,14 @@ class NeuralNetWork():
         self.layers_matrices = []
         self.create_layers_matrixes(structure, initial_weights)
         self.regularization_factor = regFactor
+        self.structure = structure
         # Set decimals cases shown as output for numpy
         np.set_printoptions(precision=self.numpy_precision)
 
     def create_layers_matrixes(self, structure, initial_weights=[]):
 
-        # Set pre defined initial weights
         if len(initial_weights) > 0:
+            # Set pre defined initial weights
             for layer in initial_weights.values():
                 matrix = np.matrix([neuron for neuron in layer.values()])
                 self.layers_matrices.append(matrix)
@@ -47,14 +48,22 @@ class NeuralNetWork():
                     raise ValueError("Network structure and initial weights do not" + \
                                      "match for layer {}".format(i+1))
         else:
-            raise NotImplementedError("Can`t initialize weights with random numbers yet")
+            # Initialize weights with random values
+            for i in range(len(structure) - 1):
+                # numRows is the number of neurons for the current layer
+                numCols = structure[i] + 1  # Add bias neuron
+                # numCols is the number of outputs for each neuron
+                numRows = structure[i+1]
+                self.layers_matrices.append(np.matrix([[0.0]*numCols]*numRows))
+                for j in range(numRows):
+                    for k in range(numCols):
+                        self.layers_matrices[-1][j, k] = random.uniform(0.001, 1)
 
-        log.debug("------ Neural network structure:")
-        log.debug("Neurons per layer: {}".format(structure))
-        for layerIndex in range(len(self.layers_matrices)):
-            log.debug("Theta{}".format(layerIndex+1))
-            for row in self.layers_matrices[layerIndex]:
-                log.debug(row)
+        # log.debug("------ Neural network structure:")
+        # for layerIndex in range(len(self.layers_matrices)):
+        #     log.debug("Theta{}".format(layerIndex+1))
+        #     for row in self.layers_matrices[layerIndex]:
+        #         log.debug(row)
 
     def propagate_instance_through_network(self, instance_matrix, debug=False):
 
@@ -88,77 +97,136 @@ class NeuralNetWork():
     def add_bias_term(self, matrices_product):
         return np.vstack([[1.0], matrices_product])
 
-    def train(self, data, batchSize=1, checkGradients=False):
+    def train(self, data, batchSize=0, checkGradients=False):
         """
         Trains the neural network using the backpropagation algorithm.
         """
-
         totalLayers = len(self.layers_matrices) + 1
         delta = [0]*totalLayers
-        log.debug("Number of layers: {}".format(totalLayers))
+        numInstances = len(data.instances)
+        log.debug("----- Training neural network with:")
+        log.debug("Layers: {} ({} in total)".format(self.structure, totalLayers))
         log.debug("Regularization factor: {}".format(self.regularization_factor))
 
-        gradients = [0]*(totalLayers-1)
+        # Check batch size
+        if batchSize < 0:
+            raise ValueError("Batch size can`t be negative")
+        elif batchSize == 0:
+            # Default batch size
+            batchSize = numInstances
+        elif batchSize > numInstances:
+            raise ValueError("Batch size ({}) is greater than the number of instances ({})".\
+                format(batchSize, numInstances))
+        elif numInstances % batchSize > 0:
+            print("Batch size {} and num of instances {} do not match, {} instances will be left out.".\
+                format(batchSize, numInstances, numInstances%batchSize))
+        
+        numBatches = int(numInstances/batchSize)
+                    
+        log.debug("Batch size: {}".format(batchSize))
+        log.debug("Number of instances: {}".format(numInstances))
 
-        for instanceIndex, instance in enumerate(data.instances):
-            # Calculate delta for the output layer
-            attrMatrix = data.getAttrMatrix(instance)
-            a = self.propagate_instance_through_network(attrMatrix)
-            y = data.getResultMatrix(instance)
-            curDelta = a[-1] - y
-            delta[totalLayers-1] = curDelta
+        # Start training
+        errorHistory = []
+        trainingDone = False
+        iterCount = 0
+        lastMean = 0
+        newMean = 0
+        while not trainingDone:
 
-            error = self.calculate_cost_function([instance])
-            # log.debug("Error for instance {}: {}".format(instanceIndex+1, error))
+            for iterCount in range(numBatches):
+                startIndex = iterCount*batchSize
+                batchInstances = data.instances[startIndex:startIndex+batchSize]
+                log.debug("Training network with batch {}/{}...".\
+                    format(iterCount+1, int(numInstances/batchSize)))
+                gradients = [0]*(totalLayers-1)
+                for instanceIndex, instance in enumerate(batchInstances):
+                    # Calculate delta for the output layer
+                    attrMatrix = data.getAttrMatrix(instance)
+                    a = self.propagate_instance_through_network(attrMatrix)
+                    y = data.getResultMatrix(instance)
+                    curDelta = a[-1] - y
+                    delta[totalLayers-1] = curDelta
 
-            # (1.3) Calculate delta for the hidden layers
-            for i in range(totalLayers-2, 0, -1):
-                
-                step1 = self.layers_matrices[i].T*delta[i+1]
-                step2 = np.multiply(step1, a[i])
-                step3 = np.multiply(step2, 1-a[i])
-                # Remove delta value for bias neuron (first row)
-                delta[i] = np.delete(step3, 0, axis=0)
+                    error = self.calculate_cost_function([instance])
+                    # log.debug("Error for instance {}: {}".\
+                    #   format(instanceIndex+1, error))
 
-            # (1.4) Update gradients for every layer based on the current example
-            for i in range(totalLayers-2, -1, -1):
-                gradients[i] = gradients[i] + delta[i+1]*a[i].T
-    
-        # (2) Calculate the final gradients for every layer
-        numExamples = len(data.instances)
-        for i in range(totalLayers-2, -1, -1):
-            tempTheta = self.layers_matrices[i]
-            # (2.1) Remove thetas for bias neurons (first column) and apply reg.
-            # curP = np.delete(self.regularization_factor*tempTheta, 0, axis=1)
-            curP = self.regularization_factor*tempTheta
-            curP[:,0] = 0
-            # (2.2) Combine gradients and regularization, calculate mean grad.
-            gradients[i] = (1/numExamples)*(gradients[i] + curP)
+                    # (1.3) Calculate delta for the hidden layers
+                    for i in range(totalLayers-2, 0, -1):
+                        
+                        step1 = self.layers_matrices[i].T*delta[i+1]
+                        step2 = np.multiply(step1, a[i])
+                        step3 = np.multiply(step2, 1-a[i])
+                        # Remove delta value for bias neuron (first row)
+                        delta[i] = np.delete(step3, 0, axis=0)
 
-        if checkGradients:
-            self.numeric_gradient_check(data, backprop=gradients)
+                    # (1.4) Update gradients for every layer based on the current example
+                    for i in range(totalLayers-2, -1, -1):
+                        gradients[i] = gradients[i] + delta[i+1]*a[i].T
+            
+                # (2) Calculate the final gradients for every layer
+                for i in range(totalLayers-2, -1, -1):
+                    tempTheta = self.layers_matrices[i]
+                    # (2.1) Remove thetas for bias neurons (first column) and apply reg.
+                    curP = self.regularization_factor*tempTheta
+                    curP[:,0] = 0
+                    # (2.2) Combine gradients and regularization, calculate mean grad.
+                    gradients[i] = (1/batchSize)*(gradients[i] + curP)
 
-        # (4) Update the weights(thetas) for each layer
-        newThetas = [0]*len(self.layers_matrices)
-        alpha = 1
-        for i in range(totalLayers-2, -1, -1):
-            newThetas[i] = self.layers_matrices[i] - alpha*gradients[i]
+                if checkGradients:
+                    self.numeric_gradient_check(data, backprop=gradients)
 
-        # Calculate error for validation
-        error = self.calculate_cost_function(data.instances, applyReg=True)
-        # log.debug("Error for all instances: {}".format(error))
+                # Calculate error for validation
+                curError = self.calculate_cost_function(batchInstances, 
+                                                        applyReg=True)
+
+                # Calculate the mean value for the last few error values
+                errorHistory.append(curError)
+                num = 5
+                if len(errorHistory) > num:
+                    # Calculate mean
+                    newMean = 0
+                    for value in errorHistory[-num:]:
+                        newMean += value
+                    newMean = newMean/num
+
+                    if abs(newMean - lastMean) < 0.0001:
+                        trainingDone = True
+                        log.debug("Training done with mean error diff = {:.5f}".\
+                            format(abs(newMean - lastMean)))
+                    else:
+                        trainingDone = False                  
+                else:
+                    trainingDone = False
+
+                # log.debug("Error history: {}".format(errorHistory))
+                # log.debug("lastMean: {}, newMean: {} -> diff: {}".\
+                #     format(lastMean, newMean, abs(newMean-lastMean)))
+
+                lastMean = newMean
+
+                # (4) Update the weights(thetas) for each layer
+                newThetas = [0]*len(self.layers_matrices)
+                alpha = 1
+                for i in range(totalLayers-2, -1, -1):
+                    # newThetas[i] = self.layers_matrices[i] - alpha*gradients[i]
+                    self.layers_matrices[i] = self.layers_matrices[i] - alpha*gradients[i]
+
+            iterCount += 1
+
         # log.debug("f = {}, y = {}".format(a[-1], y))
         # log.debug("Resulting delta: {}".format(delta))
         # log.debug("Resulting gradients: {}".format(gradients))
         # log.debug("Resulting thetas: {}".format(newThetas))
         # log.debug("Original thetas: {}".format(self.layers_matrices))
 
-        log.debug("---- Numeric gradients calculated via backpropagation")
-        for i in range(totalLayers-1):
-            s = "Numeric gradient for Theta{}:".format(i)
-            log.debug(s)
-            for row in gradients[i]:
-                log.debug(row)
+        # log.debug("---- Numeric gradients calculated via backpropagation")
+        # for i in range(totalLayers-1):
+        #     s = "Numeric gradient for Theta{}:".format(i)
+        #     log.debug(s)
+        #     for row in gradients[i]:
+        #         log.debug(row)
 
     def numeric_gradient_check(self, data, epsilon=0.000001, backprop=None):
         """
@@ -166,7 +234,6 @@ class NeuralNetWork():
         :param backprop: gradients calculated via backpropagation, if none is 
         given, the difference will not be calculated
         """
-
         gradients = []
         # Iterate over every weight in the neural network
         for layerIndex, layer in enumerate(self.layers_matrices):
@@ -240,8 +307,7 @@ class NeuralNetWork():
             prediction = activation_matrix[-1]
             vector_of_classes = self.generate_vector_of_classes(instance)
             for predicted_class, correct_class in zip(prediction, vector_of_classes):
-                j_value = j_value + \
-                    self.j_function(predicted_class, correct_class)
+                j_value += self.j_function(predicted_class, correct_class)
 
         j_value = j_value / number_of_instances
         if applyReg:
