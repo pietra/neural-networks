@@ -12,13 +12,14 @@ def main():
     checkGradients = False
 
     # For tests
-    sys.argv.append('entry_files/network_2.txt')
-    sys.argv.append('entry_files/initial_weights_2.txt')
-    sys.argv.append('datasets/test_2.csv')
+    sys.argv.append('entry_files/network.txt')
+    sys.argv.append('entry_files/initial_weights.txt')
+    sys.argv.append('datasets/test.csv')
 
     # 1st parameter: network.txt
-    regularization_factor, networks_layers_size = read_network_file(
-        sys.argv[1])
+    regularization_factor, networks_layers_size = read_network_file(sys.argv[1])
+
+    print("Layers: {}".format(networks_layers_size))
 
     # 2nd parameter: initial_weights.txt
     initial_weights = read_initial_weights_file(sys.argv[2])
@@ -28,7 +29,7 @@ def main():
     dataset.parseFromFile(sys.argv[3])
     # dataset.normalizeAttributes()
 
-    neural_network = NeuralNetWork(initial_weights, 
+    neural_network = NeuralNetWork(networks_layers_size, initial_weights=initial_weights, 
                                    regFactor=regularization_factor)
 
     neural_network.train(dataset, checkGradients=False)

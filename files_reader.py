@@ -8,7 +8,7 @@ def read_network_file(filepath):
         content = [float(line.strip()) for line in content]
 
     regularization_factor = content[0]
-    networks_layers_size = content[1:]
+    networks_layers_size = [int(x) for x in content[1:]]
 
     return regularization_factor, networks_layers_size
 

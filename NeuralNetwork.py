@@ -24,23 +24,37 @@ class NeuralNetWork():
     gradient_output_filename = "backprop_gradients.out"
     numpy_precision = 5
 
-    def __init__(self, initial_weights, regFactor=0):
+    def __init__(self, structure, initial_weights=[], regFactor=0):
         self.layers_matrices = []
-        self.create_layers_matrixes(initial_weights)
+        self.create_layers_matrixes(structure, initial_weights)
         self.regularization_factor = regFactor
         # Set decimals cases shown as output for numpy
         np.set_printoptions(precision=self.numpy_precision)
 
-    def create_layers_matrixes(self, initial_weights):
-        for layer in initial_weights.values():
-            matrix = np.matrix([neuron for neuron in layer.values()])
-            self.layers_matrices.append(matrix)
+    def create_layers_matrixes(self, structure, initial_weights=[]):
 
-        # log.debug("------ Neural network structure:")
-        # for layerIndex in range(len(self.layers_matrices)):
-        #     log.debug("Theta{}".format(layerIndex+1))
-        #     for row in self.layers_matrices[layerIndex]:
-        #         log.debug(row)
+        # Set pre defined initial weights
+        if len(initial_weights) > 0:
+            for layer in initial_weights.values():
+                matrix = np.matrix([neuron for neuron in layer.values()])
+                self.layers_matrices.append(matrix)
+
+            # Check if weight matrix matches the structure specified
+            for i in range(len(self.layers_matrices)):
+                (numRows, numCols) = self.layers_matrices[i].shape
+                # +1 represents the bias neuron
+                if numCols != structure[i]+1 or numRows != structure[i+1]:
+                    raise ValueError("Network structure and initial weights do not" + \
+                                     "match for layer {}".format(i+1))
+        else:
+            raise NotImplementedError("Can`t initialize weights with random numbers yet")
+
+        log.debug("------ Neural network structure:")
+        log.debug("Neurons per layer: {}".format(structure))
+        for layerIndex in range(len(self.layers_matrices)):
+            log.debug("Theta{}".format(layerIndex+1))
+            for row in self.layers_matrices[layerIndex]:
+                log.debug(row)
 
     def propagate_instance_through_network(self, instance_matrix, debug=False):
 
