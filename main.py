@@ -80,9 +80,12 @@ def evaluate_performance():
 
         #Trains network
         neural_network.train(training_data)
-        neural_network.numeric_gradient_estimate(training_data)
 
-        print(neural_network.propagate_instance_through_network(return_matrix_of_instance_values(testing_data.instances[0])))
+        output = neural_network.propagate_instance_through_network(return_matrix_of_instance_values(testing_data.instances[0]))
+        print("STUFF:")
+        print(output)
+        print("OUTPUT:")
+        print(output[-1])
 
     '''
         #v---v THE REST OF THIS FUNCTION IS UNTESTED AND A WORK IN PROGRESS v---v
@@ -90,13 +93,24 @@ def evaluate_performance():
         runPerformances = []
         runPrecisions = []
         runRecalls = []
-        #TODO: loop this taking every possible output as the positive class once
+        for class_value in dataset.listClassValues():
+            positive_class = class_value
             true_positives = 0
             false_positives = 0
             true_negatives = 0
             false_negatives = 0
             for instance in testing_data.instances:
                 output = neural_network.propagate_instance_through_network(instance)
+                #TODO: Rewrite this part when the output of the network is figured out
+                if (output == positive_class) and (instance['class'] == positive_class):
+                    true_positives += 1
+                elif (output == positive_class) and (instance['class'] != positive_class):
+                    false_positives += 1
+                elif (output != positive_class) and (instance['class'] != positive_class):
+                    true_negative += 1
+                elif (output != positive_class) and (instance['class'] == positive_class):
+                    false_negative += 1
+
                 #TODO: compare network output with correct result
                 #TODO: update TP, FP, TN, FN numbers
 
