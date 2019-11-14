@@ -6,6 +6,7 @@ import numpy as np
 import logging
 from util import printMatrix
 from data import Data
+import matplotlib.pyplot as plt
 
 
 # Initialize logging
@@ -135,6 +136,8 @@ class NeuralNetWork():
 
         # Start training
         errorHistory = []
+        learningGraphX = []
+        learningGraphY = []
         trainingDone = False
         iterCount = 0
         lastMean = 0
@@ -191,6 +194,9 @@ class NeuralNetWork():
                 curError = self.calculate_cost_function(batchInstances, 
                                                         applyReg=True)
 
+                learningGraphY.append(curError)
+                learningGraphX.append(trainingRuns)
+
                 # Calculate the mean value for the last few error values
                 errorHistory.append(curError)
                 num = 5
@@ -221,6 +227,12 @@ class NeuralNetWork():
                     self.layers_matrices[i] = self.layers_matrices[i] - alpha*gradients[i]
 
             trainingRuns += 1
+
+        plt.plot(learningGraphX, learningGraphY)
+        plt.title("Learning curve")
+        plt.ylabel("Error")
+        plt.xlabel("Runs")
+        plt.show()
 
         # log.debug("f = {}, y = {}".format(a[-1], y))
         # log.debug("Resulting delta: {}".format(delta))
