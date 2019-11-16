@@ -16,7 +16,7 @@ class Data(object):
         elif isinstance(categoricalVars, str):
             self.categoricalAttr = [categoricalVars]
         else:
-            raise ValueError("Attribute 'numeric' should be a list or str")
+            raise ValueError("Attribute 'categorical' should be a list or str")
 
         self.categoricalAttr = categoricalVars
 
@@ -58,6 +58,22 @@ class Data(object):
                     values.append(instance[className])
 
         return values
+
+    def splitClasses(self):
+        """
+        Splits categorical classes into binary classes for each possible value
+        """
+        for className in self.classNames:
+            if className in self.categoricalAttr:
+                values = self.listAttributeValues(className)
+                print("Class {} has values {}".format(className, values))
+
+                for instance in self.instances:
+                    for value in values:
+                        if instance[className] == value:
+                            instance[className+"_"+value] = 1
+                        else:
+                            instance[className+"_"+value] = 0
 
     def parseFromFile(self, filename, delimiter=',', quotechar='"'):
 
