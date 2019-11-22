@@ -180,15 +180,29 @@ class Data(object):
         else:
             return True
 
-    def normalizeAttributes(self, maxValue=1):
+    def normalizeAttributes(self, maxValue=1, normalizeClass=True):
         """
         Normalizes all attributes to be a value between 0 an 'maxValue'.
         """
         #Goes through every instance and finds the highest value for each attribute
         maxValues = {}
+        minValues = {}
         for key in self.keys:
-            maxValues[key] = max(instance[key] for instance in self.instances)  #Gets the max value of specified attribute
+            #Gets the max and min values of specified attribute
+            if not normalizeClass and 'class' in key or\
+                    key in self.categoricalAttr:
+                continue
+            else:
+                maxValues[key] = max(instance[key] for instance in self.instances)  
+                minValues[key] = min(instance[key] for instance in self.instances)
 
         for instance in self.instances:
             for key in self.keys:
-                instance[key] = (instance[key] / maxValues[key]) * maxValue
+                if not normalizeClass and 'class' in key or\
+                        key in self.categoricalAttr:
+                    continue
+                else:
+                    if maxValues[key] - minValues[key] == 0:
+                        instance[key] = 0
+                    else:
+                        instance[key] = ((instance[key] - minValues[key])/(maxValues[key] - minValues[key])) * maxValue

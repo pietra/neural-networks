@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import getopt, sys
+import runBenchmarks
 from files_reader import read_network_file, read_initial_weights_file, read_dataset_file
 from NeuralNetwork import NeuralNetWork
 from data import Data
@@ -18,7 +19,6 @@ def usage():
         "\t-h or --help: Show this message"
 
     print(s)
-
 
 def main():
 
@@ -83,7 +83,6 @@ def main():
 
     neural_network.train(dataset, batchSize=0, checkGradients=checkGradients)
     # j_value = neural_network.calculate_cost_function(dataset.instances)
-
 
 def evaluate_performance():
     # For tests
@@ -196,5 +195,6 @@ def evaluate_performance():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
     #evaluate_performance()
+    runBenchmarks.generateIonosphere()
