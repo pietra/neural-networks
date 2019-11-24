@@ -110,7 +110,7 @@ class NeuralNetWork():
         attrMatrix = Data.getAttrMatrix(instance)
         a = self.propagate_instance_through_network(attrMatrix)
         f = a[-1]
-        y = data.getResultMatrix(instance)
+        y = Data.getResultMatrix(instance)
 
         # Find out if data has been splitted
         classValues = []
@@ -125,7 +125,9 @@ class NeuralNetWork():
                 if f[i,0] > f[highest,0]:
                     highest = i
 
-            return classValues[highest]
+            # print("f: '%s', y: '%s" % (f, y))
+            # print("Predicted class: '%s', expected: '%s'" % (classValues[highest], y[highest,0]))
+            return classValues[highest].replace('class_', '')
         else:
             # There is only on class
             if len(f) > 1:

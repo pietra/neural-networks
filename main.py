@@ -198,6 +198,6 @@ if __name__ == "__main__":
     # main()
     #evaluate_performance()
     # runBenchmarks.generateIonosphere()
-    runBenchmarks.generatePima()
+    # runBenchmarks.generatePima()
     # runBenchmarks.generateWine()
-    # runBenchmarks.generateWdbc()
+    runBenchmarks.generateWdbc()

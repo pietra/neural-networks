@@ -24,21 +24,24 @@ def generateIonosphere() -> (Data, NeuralNetWork):
     # 3rd parameter: dataset.csv
     dataset = Data(categoricalVars=['class'])
     dataset.parseFromFile(datasetFile)
-
-    print("Dataset instances before normalization")
-    for i in range(1, 10):
-        print(dataset.instances[i]) 
-
     dataset.normalize()
-
-    print("Dataset instances after normalization")
-    for i in range(1, 10):
-        print(dataset.instances[i]) 
+    dataset.splitClasses()
 
     neural_network = NeuralNetWork(networks_layers_size, regFactor=regularization_factor)
+    neural_network.train(dataset, batchSize=batchSize, checkGradients=checkGradients)
 
-    # neural_network.train(dataset, batchSize=batchSize, checkGradients=checkGradients)
-    # j_value = neural_network.calculate_cost_function(dataset.instances)
+    errorCount = 0
+    totalCount = 0
+    for inst in dataset.instances:
+        pred = neural_network.classify(inst)
+        # print("Prediction: '%s', Y: '%s'" % (pred, inst['class']))
+        totalCount += 1
+        if pred != inst['class']:
+            errorCount += 1
+
+    print("Result: %d hits and %d misses" % (totalCount-errorCount, errorCount))
+
+    return (dataset, neural_network)
 
 
 def generatePima(batchSize=0) -> (Data, NeuralNetWork):
@@ -61,9 +64,19 @@ def generatePima(batchSize=0) -> (Data, NeuralNetWork):
     # Train and classify
     neural_network = NeuralNetWork(networks_layers_size, regFactor=regularization_factor)
     neural_network.train(dataset, batchSize=batchSize, alpha=1, plotError=False)
-    
-    pred = neural_network.classify(dataset.instances[0])
-    print("Prediction: %s" % pred)
+
+    errorCount = 0
+    totalCount = 0
+    for inst in dataset.instances:
+        pred = neural_network.classify(inst)
+        # print("Prediction: '%s', Y: '%s'" % (pred, inst['class']))
+        totalCount += 1
+        if pred != inst['class']:
+            errorCount += 1
+
+    print("Result: %d hits and %d misses" % (totalCount-errorCount, errorCount))     
+
+    return (dataset, neural_network)
 
 
 def generateWine(batchSize=0) -> (Data, NeuralNetWork):
@@ -88,6 +101,19 @@ def generateWine(batchSize=0) -> (Data, NeuralNetWork):
 
     neural_network.train(dataset, batchSize=batchSize, alpha=1)
 
+    errorCount = 0
+    totalCount = 0
+    for inst in dataset.instances:
+        pred = neural_network.classify(inst)
+        # print("Prediction: '%s', Y: '%s'" % (pred, inst['class']))
+        totalCount += 1
+        if pred != inst['class']:
+            errorCount += 1
+
+    print("Result: %d hits and %d misses" % (totalCount-errorCount, errorCount))
+
+    return (dataset, neural_network)
+
 
 def generateWdbc(batchSize=0) -> (Data, NeuralNetWork):
     """
@@ -109,3 +135,15 @@ def generateWdbc(batchSize=0) -> (Data, NeuralNetWork):
     neural_network = NeuralNetWork(networks_layers_size, regFactor=regularization_factor)
     neural_network.train(dataset, batchSize=batchSize, alpha=1)
 
+    errorCount = 0
+    totalCount = 0
+    for inst in dataset.instances:
+        pred = neural_network.classify(inst)
+        # print("Prediction: '%s', Y: '%s'" % (pred, inst['class']))
+        totalCount += 1
+        if pred != inst['class']:
+            errorCount += 1
+
+    print("Result: %d hits and %d misses" % (totalCount-errorCount, errorCount))
+
+    return (dataset, neural_network)
