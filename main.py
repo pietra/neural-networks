@@ -77,11 +77,12 @@ def main():
     # 3rd parameter: dataset.csv
     dataset = Data(categoricalVars=[])
     dataset.parseFromFile(datasetFile)
-    # dataset.normalizeAttributes()
+    # dataset.normalize()
 
-    neural_network = NeuralNetWork(networks_layers_size, initial_weights=initial_weights, regFactor=regularization_factor)
+    neural_network = NeuralNetWork(networks_layers_size,
+                                   regFactor=regularization_factor)
 
-    neural_network.train(dataset, batchSize=0, checkGradients=checkGradients)
+    neural_network.train(dataset, batchSize=0)
     # j_value = neural_network.calculate_cost_function(dataset.instances)
 
 def evaluate_performance():
@@ -100,7 +101,7 @@ def evaluate_performance():
     # 3rd parameter: dataset.csv
     dataset = Data(categoricalVars=[])
     dataset.parseFromFile(sys.argv[3])
-    dataset.normalizeAttributes()
+    dataset.normalize()
 
     #Creates neural network form files
     neural_network = NeuralNetWork(initial_weights, regularization_factor)
@@ -193,8 +194,10 @@ def evaluate_performance():
     print("F1-measure from averages: {:.2f}%".format(f1*100))
     '''
 
-
 if __name__ == "__main__":
     # main()
     #evaluate_performance()
-    runBenchmarks.generateIonosphere()
+    # runBenchmarks.generateIonosphere()
+    runBenchmarks.generatePima()
+    # runBenchmarks.generateWine()
+    # runBenchmarks.generateWdbc()

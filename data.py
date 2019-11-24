@@ -10,6 +10,7 @@ class Data(object):
         self.keys = []
         self.instances = []
         self.classNames = classNames
+        self.classesSplitted = False
 
         if isinstance(categoricalVars, list):
             self.categoricalAttr = categoricalVars
@@ -17,8 +18,6 @@ class Data(object):
             self.categoricalAttr = [categoricalVars]
         else:
             raise ValueError("Attribute 'categorical' should be a list or str")
-
-        self.categoricalAttr = categoricalVars
 
     def __repr__(self):
         return "<Data {} instances>".format(len(self.instances))
@@ -51,7 +50,7 @@ class Data(object):
         Returns a list containing all the possible class values
         """
         values = []
-        print(self.classNames)
+        # print(self.classNames)
         for instance in self.instances:
             for className in self.classNames:
                 if instance[className] not in values:
@@ -63,10 +62,18 @@ class Data(object):
         """
         Splits categorical classes into binary classes for each possible value
         """
+        if self.classesSplitted:
+            print("Classes have already been splitted, skipping...")
+            return
+        else:
+            self.classesSplitted = True
+
+        initialClasses = self.categoricalAttr.copy()
+        values = []
         for className in self.classNames:
             if className in self.categoricalAttr:
                 values = self.listAttributeValues(className)
-                print("Class {} has values {}".format(className, values))
+                # print("Class {} has values {}".format(className, values))
 
                 for instance in self.instances:
                     for value in values:
@@ -74,6 +81,18 @@ class Data(object):
                             instance[className+"_"+value] = 1
                         else:
                             instance[className+"_"+value] = 0
+
+        if len(values) == 0:
+            print("ERROR, no categorical classes defined to split")
+            return
+
+        for x in values:
+            self.classNames.append(x)
+            self.categoricalAttr.append(x)
+        
+        for name in initialClasses:
+            self.categoricalAttr.remove(name)
+            self.classNames.remove(name)
 
     def parseFromFile(self, filename, delimiter=',', quotechar='"'):
 
@@ -159,10 +178,21 @@ class Data(object):
 
     @staticmethod
     def getResultMatrix(instance):
+
+        isSplitted = False
+        for key in instance.keys():
+            if 'class_' in key:
+                isSplitted = True
+                
+        if isSplitted:
+            substring = 'class_'
+        else:
+            substring = 'class'
+
         values = []
         for key, value in zip(instance.keys(), 
                               instance.values()):
-            if 'class' in key:
+            if substring in key:
                 values.append([value])
         return np.matrix(values)
 
@@ -180,7 +210,7 @@ class Data(object):
         else:
             return True
 
-    def normalizeAttributes(self, maxValue=1, normalizeClass=True):
+    def normalize(self, maxValue=1, normalizeClass=False):
         """
         Normalizes all attributes to be a value between 0 an 'maxValue'.
         """

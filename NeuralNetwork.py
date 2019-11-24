@@ -105,7 +105,36 @@ class NeuralNetWork():
     def add_bias_term(self, matrices_product):
         return np.vstack([[1.0], matrices_product])
 
-    def train(self, data, batchSize=0, checkGradients=False, alpha=1):
+    def classify(self, instance):
+
+        attrMatrix = Data.getAttrMatrix(instance)
+        a = self.propagate_instance_through_network(attrMatrix)
+        f = a[-1]
+        y = data.getResultMatrix(instance)
+
+        # Find out if data has been splitted
+        classValues = []
+        for key in instance.keys():
+            if 'class_' in key:
+                classValues.append(key)
+        
+        if len(classValues) > 0:
+            # Prediction is the class with the highest score
+            highest = 0
+            for i in range(len(f)):
+                if f[i,0] > f[highest,0]:
+                    highest = i
+
+            return classValues[highest]
+        else:
+            # There is only on class
+            if len(f) > 1:
+                raise SystemError("Logic error, there should be only one class")
+
+            return f[0,0]              
+
+    def train(self, data, batchSize=0, checkGradients=False, alpha=1, 
+              plotError=True):
         """
         Trains the neural network using the backpropagation algorithm.
         """
@@ -160,8 +189,6 @@ class NeuralNetWork():
                     delta[totalLayers-1] = curDelta
 
                     error = self.calculate_cost_function([instance])
-                    # log.debug("Error for instance {}: {}".\
-                    #   format(instanceIndex+1, error))
 
                     # (1.3) Calculate delta for the hidden layers
                     for i in range(totalLayers-2, 0, -1):
@@ -194,6 +221,7 @@ class NeuralNetWork():
                 curError = self.calculate_cost_function(batchInstances, 
                                                         applyReg=True)
 
+                log.debug("Error: %.5f" % curError)
                 learningGraphY.append(curError)
                 learningGraphX.append(trainingRuns)
 
@@ -228,11 +256,13 @@ class NeuralNetWork():
 
             trainingRuns += 1
 
-        plt.plot(learningGraphX, learningGraphY)
-        plt.title("Learning curve")
-        plt.ylabel("Error")
-        plt.xlabel("Runs")
-        plt.show()
+        if plotError:
+            plt.plot(learningGraphX, learningGraphY)
+            plt.title("Learning curve")
+            plt.ylabel("Error")
+            plt.xlabel("Runs")
+            plt.grid()
+            plt.show()
 
         # log.debug("f = {}, y = {}".format(a[-1], y))
         # log.debug("Resulting delta: {}".format(delta))
@@ -358,5 +388,18 @@ class NeuralNetWork():
         return sum_weights
 
     def generate_vector_of_classes(self, instance):
-        return [instance[attribute]
-                for attribute in instance if 'class' in attribute]
+
+        # GAMBI to know if classes have been splitted
+        splitted = False
+
+        for attr in instance:
+            if 'class_' in attr:
+                splitted = True
+
+        if splitted:
+            substr = 'class_'
+        else:
+            substr = 'class'
+    
+        return [instance[attribute] 
+                for attribute in instance if substr in attribute]
