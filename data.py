@@ -52,9 +52,8 @@ class Data(object):
         values = []
         # print(self.classNames)
         for instance in self.instances:
-            for className in self.classNames:
-                if instance[className] not in values:
-                    values.append(instance[className])
+                if instance["class"] not in values:
+                    values.append(instance["class"])
 
         return values
 

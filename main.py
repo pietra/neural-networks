@@ -86,34 +86,48 @@ def main():
     # j_value = neural_network.calculate_cost_function(dataset.instances)
 
 def evaluate_performance():
-    # For tests
-    sys.argv.append('entry_files/network_2.txt')
-    sys.argv.append('entry_files/initial_weights_2.txt')
-    sys.argv.append('datasets/test_2.csv')
+    if(sys.argv[2] == "ionosphere"):
+        print("Using Ionosphere dataset.")
+        networkFile = 'entry_files/network_ionosphere.txt'
+        datasetFile = 'datasets/ionosphere.csv'
+    elif(sys.argv[2] == "pima"):
+        print("Using Pima dataset.")
+        networkFile = 'entry_files/network_pima.txt'
+        datasetFile = 'datasets/pima.csv'
+    elif(sys.argv[2] == "wine"):
+        print("Using Wine dataset.")
+        networkFile = 'entry_files/network_wine.txt'
+        datasetFile = 'datasets/wine.csv'
+    elif(sys.argv[2] == "wdbc"):
+        print("Using WDBC dataset.")
+        networkFile = 'entry_files/network_wdbc.txt'
+        datasetFile = 'datasets/wdbc2.csv'
+    else:
+        print("Invalid dataset! Please use 'ionosphere', 'pima', 'wine' or 'wdbc'. Defaulting to 'wine'.")
+        networkFile = 'entry_files/network_wine.txt'
+        datasetFile = 'datasets/wine.csv'
+
+    checkGradients = False
+    batchSize = 0
 
     # 1st parameter: network.txt
-    regularization_factor, networks_layers_size = read_network_file(
-        sys.argv[1])
-
-    # 2nd parameter: initial_weights.txt
-    initial_weights = read_initial_weights_file(sys.argv[2])
-
+    regularization_factor, networks_layers_size = read_network_file(networkFile)
+    
     # 3rd parameter: dataset.csv
-    dataset = Data(categoricalVars=[])
-    dataset.parseFromFile(sys.argv[3])
+    dataset = Data(categoricalVars='class')
+    dataset.parseFromFile(datasetFile)
     dataset.normalize()
-
-    #Creates neural network form files
-    neural_network = NeuralNetWork(initial_weights, regularization_factor)
+    dataset.splitClasses()
 
     #Generates testing/training folds
-    num_folds = 2
+    num_folds = 10
     folds = dataset.generateFolds(num_folds)
 
     #Analyzes network performance using each fold as testing data once
     allPerformances = []
     allPrecisions = []
     allRecalls = []
+    print("Running tests...")
     for i in range(num_folds):
         print("")
         print("----- Test run {} of {} -----".format(i+1, num_folds))
@@ -128,17 +142,9 @@ def evaluate_performance():
                 for instance in fold:
                     training_data.addInstance(instance)
 
-        #Trains network
-        neural_network.train(training_data)
-
-        output = neural_network.propagate_instance_through_network(return_matrix_of_instance_values(testing_data.instances[0]))
-        print("STUFF:")
-        print(output)
-        print("OUTPUT:")
-        print(output[-1])
-
-    '''
-        #v---v THE REST OF THIS FUNCTION IS UNTESTED AND A WORK IN PROGRESS v---v
+        # Training
+        neural_network = NeuralNetWork(networks_layers_size, regFactor=regularization_factor)
+        neural_network.train(training_data, batchSize=batchSize, alpha=1, plotError=False)
 
         runPerformances = []
         runPrecisions = []
@@ -149,25 +155,27 @@ def evaluate_performance():
             false_positives = 0
             true_negatives = 0
             false_negatives = 0
+            predictions = 0
+
             for instance in testing_data.instances:
-                output = neural_network.propagate_instance_through_network(instance)
-                #TODO: Rewrite this part when the output of the network is figured out
+                output = neural_network.classify(instance)
+                predictions += 1
+                print("Prediction {}, is {}".format(output, instance['class']))
+
                 if (output == positive_class) and (instance['class'] == positive_class):
                     true_positives += 1
                 elif (output == positive_class) and (instance['class'] != positive_class):
                     false_positives += 1
                 elif (output != positive_class) and (instance['class'] != positive_class):
-                    true_negative += 1
+                    true_negatives += 1
                 elif (output != positive_class) and (instance['class'] == positive_class):
-                    false_negative += 1
+                    false_negatives += 1
 
-                #TODO: compare network output with correct result
-                #TODO: update TP, FP, TN, FN numbers
-
+            #print("TP: {}, FP: {}, TN: {}, FN: {}".format(true_positives, false_positives, true_negatives, false_negatives))
             #Adds results to this run's results
-            runPerformances.append((truePositives+trueNegatives)/len(predictions))    #Right guesses
-            runPrecisions.append(truePositives / (truePositives + falsePositives))    #Right guesses from instances guessed positive
-            runRecalls.append(truePositives / (truePositives + falseNegatives))   #Right guesses from instances that were supposed to be positive
+            runPerformances.append((true_positives+true_negatives)/predictions)    #Right guesses
+            runPrecisions.append(true_positives / (true_positives + false_positives))    #Right guesses from instances guessed positive
+            runRecalls.append(true_positives / (true_positives + false_negatives))   #Right guesses from instances that were supposed to be positive
 
         #Calculates average performance, recall and precision for this run
         runAvgPerformance = sum(runPerformances)/len(runPerformances)
@@ -192,12 +200,16 @@ def evaluate_performance():
     print("")
     print("Network's average performance: {:.2f}% (precision: {:.2f}% / recall: {:.2f}%)".format(avgPerformance*100, avgPrecision*100, avgRecall*100))
     print("F1-measure from averages: {:.2f}%".format(f1*100))
-    '''
+
 
 if __name__ == "__main__":
+    if (sys.argv[1] == "-p"):
+        evaluate_performance()
+    else:
+        main()
     # main()
     #evaluate_performance()
     # runBenchmarks.generateIonosphere()
     # runBenchmarks.generatePima()
     # runBenchmarks.generateWine()
-    runBenchmarks.generateWdbc()
+    # runBenchmarks.generateWdbc()

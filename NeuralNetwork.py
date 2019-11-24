@@ -174,13 +174,14 @@ class NeuralNetWork():
         lastMean = 0
         newMean = 0
         trainingRuns = 0
+        print("Training in progress...")
         while not trainingDone:
 
             for iterCount in range(numBatches):
                 startIndex = iterCount*batchSize
                 batchInstances = data.instances[startIndex:startIndex+batchSize]
-                log.debug("Training network with batch {}/{}...".\
-                    format(iterCount+1, int(numInstances/batchSize)))
+                #log.debug("Training network with batch {}/{}...".\
+                #    format(iterCount+1, int(numInstances/batchSize)))
                 gradients = [0]*(totalLayers-1)
                 for instanceIndex, instance in enumerate(batchInstances):
                     # Calculate delta for the output layer
@@ -223,7 +224,7 @@ class NeuralNetWork():
                 curError = self.calculate_cost_function(batchInstances, 
                                                         applyReg=True)
 
-                log.debug("Error: %.5f" % curError)
+                #log.debug("Error: %.5f" % curError)
                 learningGraphY.append(curError)
                 learningGraphX.append(trainingRuns)
 
