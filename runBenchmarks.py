@@ -28,7 +28,7 @@ def generateIonosphere() -> (Data, NeuralNetWork):
     dataset.splitClasses()
 
     neural_network = NeuralNetWork(networks_layers_size, regFactor=regularization_factor)
-    neural_network.train(dataset, batchSize=batchSize, checkGradients=checkGradients)
+    neural_network.train(dataset, batchSize=batchSize, checkGradients=checkGradients, alpha=0.7)
 
     errorCount = 0
     totalCount = 0

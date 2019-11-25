@@ -146,6 +146,7 @@ class NeuralNetWork():
         log.debug("----- Training neural network with:")
         log.debug("Layers: {} ({} in total)".format(self.structure, totalLayers))
         log.debug("Regularization factor: {}".format(self.regularization_factor))
+        log.debug("Alpha: {}".format(alpha))
 
         # Check batch size
         if batchSize < 0:
@@ -215,16 +216,11 @@ class NeuralNetWork():
                     # (2.2) Combine gradients and regularization, calculate mean grad.
                     gradients[i] = (1/batchSize)*(gradients[i] + curP)
 
-                if checkGradients:
-                    self.numeric_gradient_check(data, gradients)
-                    if trainingRuns == 0:
-                        self.output_gradients_to_file(gradients)
-
                 # Calculate error for validation
                 curError = self.calculate_cost_function(batchInstances, 
                                                         applyReg=True)
 
-                #log.debug("Error: %.5f" % curError)
+                # log.debug("Error: %.5f" % curError)
                 learningGraphY.append(curError)
                 learningGraphX.append(trainingRuns)
 
@@ -246,6 +242,13 @@ class NeuralNetWork():
                         trainingDone = False                  
                 else:
                     trainingDone = False
+
+                if checkGradients:
+                    trainingDone = True
+                    plotError = False
+                    self.numeric_gradient_check(data, gradients)
+                    if trainingRuns == 0:
+                        self.output_gradients_to_file(gradients)
 
                 # log.debug("Error history: {}".format(errorHistory))
                 # log.debug("lastMean: {}, newMean: {} -> diff: {}".\
@@ -308,20 +311,37 @@ class NeuralNetWork():
             gradients.append(gradMatrix)        
         
         # Calculate gradient difference
-        log.debug("----- Difference between numeric and backpropagation gradients")
+        log.debug("\n----- Difference between numeric and backpropagation gradients")
         for i in range(len(gradients)):
             diff = backprop[i] -  gradients[i]
             # diff = gradients[i] -  backprop[i]
             
             numRows, numCols = diff.shape
-            mean = 0
+            # mean = 0
+            # for rowInd in range(numRows):
+            #     for colInd in range(numCols):
+            #         mean += diff[rowInd, colInd]
+            # mean = mean/(numRows*numCols)
+            # log.debug("Gradient diff for layer {} = {}".format(i+1, mean))
+            for row in diff:
+                log.debug(row)
+
+        # Print backpropagation gradients
+        log.debug("\n----- Gradients calculated via backpropagation")
+        for layerIndex in range(len(backprop)):
+            log.debug("Gradients for Theta{}".format(layerIndex+1))
+            (numRows, numCols) = backprop[layerIndex].shape
             for rowInd in range(numRows):
-                for colInd in range(numCols):
-                    mean += diff[rowInd, colInd]
-            mean = mean/(numRows*numCols)
-            log.debug("Gradient diff for layer {} = {}".format(i+1, mean))
-            # for row in diff:
-            #     log.debug(row)
+                log.debug(backprop[layerIndex][rowInd, :])
+        
+        # Print numeric gradients
+        log.debug("\n----- Gradients calculated numerically")
+        for layerIndex in range(len(gradients)):
+            log.debug("Gradients for Theta{}".format(layerIndex+1))
+            (numRows, numCols) = gradients[layerIndex].shape
+            for rowInd in range(numRows):
+                log.debug(gradients[layerIndex][rowInd, :])
+                
 
         return gradients
 
@@ -329,13 +349,13 @@ class NeuralNetWork():
 
         # Write output file in the same format as initial_weights
         fh = open(self.gradient_output_filename, 'w')
-        log.debug("----- Gradients calculated via backpropagation")
+        # log.debug("----- Gradients calculated via backpropagation")
         for layerIndex in range(len(gradients)):
-            log.debug("Gradients for Theta{}".format(layerIndex+1))
+            # log.debug("Gradients for Theta{}".format(layerIndex+1))
             (numRows, numCols) = gradients[layerIndex].shape
             line = ""
             for rowInd in range(numRows):
-                log.debug(gradients[layerIndex][rowInd, :])
+                # log.debug(gradients[layerIndex][rowInd, :])
                 for colInd in range(numCols):
                     line += "%.5f" %(gradients[layerIndex][rowInd, colInd])
                     # Coma separated row values

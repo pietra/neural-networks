@@ -26,9 +26,9 @@ def main():
     inputFiles = []
 
     # For tests
-    sys.argv.append('entry_files/network_2.txt')
-    sys.argv.append('entry_files/initial_weights_2.txt')
-    sys.argv.append('datasets/test_2.csv')
+    sys.argv.append('entry_files/network.txt')
+    sys.argv.append('entry_files/initial_weights.txt')
+    sys.argv.append('datasets/test.csv')
 
     # Separate network.txt, initial_weights.txt and dataset.txt
     for arg in sys.argv[1:]:
@@ -63,6 +63,7 @@ def main():
             checkGradients = True
         elif o in ('-h', '--help'):
             usage()
+            sys.exit()
 
     print("Starting Neural Networks Algorithm...")
     # 1st parameter: network.txt
@@ -80,9 +81,10 @@ def main():
     # dataset.normalize()
 
     neural_network = NeuralNetWork(networks_layers_size,
+                                   initial_weights=initial_weights,
                                    regFactor=regularization_factor)
 
-    neural_network.train(dataset, batchSize=0)
+    neural_network.train(dataset, batchSize=0, checkGradients=checkGradients, plotError=True)
     # j_value = neural_network.calculate_cost_function(dataset.instances)
 
 def evaluate_performance():
@@ -90,22 +92,27 @@ def evaluate_performance():
         print("Using Ionosphere dataset.")
         networkFile = 'entry_files/network_ionosphere.txt'
         datasetFile = 'datasets/ionosphere.csv'
+        alphaValue = 0.3
     elif(sys.argv[2] == "pima"):
         print("Using Pima dataset.")
         networkFile = 'entry_files/network_pima.txt'
         datasetFile = 'datasets/pima.csv'
+        alphaValue = 0.3
     elif(sys.argv[2] == "wine"):
         print("Using Wine dataset.")
         networkFile = 'entry_files/network_wine.txt'
         datasetFile = 'datasets/wine.csv'
+        alphaValue = 1
     elif(sys.argv[2] == "wdbc"):
         print("Using WDBC dataset.")
         networkFile = 'entry_files/network_wdbc.txt'
         datasetFile = 'datasets/wdbc2.csv'
+        alphaValue = 1
     else:
         print("Invalid dataset! Please use 'ionosphere', 'pima', 'wine' or 'wdbc'. Defaulting to 'wine'.")
         networkFile = 'entry_files/network_wine.txt'
         datasetFile = 'datasets/wine.csv'
+        alphaValue = 1
 
     checkGradients = False
     batchSize = 0
@@ -143,8 +150,10 @@ def evaluate_performance():
                     training_data.addInstance(instance)
 
         # Training
-        neural_network = NeuralNetWork(networks_layers_size, regFactor=regularization_factor)
-        neural_network.train(training_data, batchSize=batchSize, alpha=1, plotError=False)
+        neural_network = NeuralNetWork(networks_layers_size, 
+                                       regFactor=regularization_factor)
+        neural_network.train(training_data, batchSize=batchSize, 
+                             alpha=alphaValue, plotError=False)
 
         runPerformances = []
         runPrecisions = []
@@ -160,7 +169,7 @@ def evaluate_performance():
             for instance in testing_data.instances:
                 output = neural_network.classify(instance)
                 predictions += 1
-                print("Prediction {}, is {}".format(output, instance['class']))
+                # print("Prediction {}, is {}".format(output, instance['class']))
 
                 if (output == positive_class) and (instance['class'] == positive_class):
                     true_positives += 1
@@ -203,13 +212,12 @@ def evaluate_performance():
 
 
 if __name__ == "__main__":
-    if (sys.argv[1] == "-p"):
+    if len(sys.argv) > 1 and sys.argv[1] == "-p":
         evaluate_performance()
     else:
         main()
-    # main()
-    #evaluate_performance()
-    # runBenchmarks.generateIonosphere()
-    # runBenchmarks.generatePima()
-    # runBenchmarks.generateWine()
-    # runBenchmarks.generateWdbc()
+        # evaluate_performance()
+        # runBenchmarks.generateIonosphere()
+        # runBenchmarks.generatePima()
+        # runBenchmarks.generateWine()
+        # runBenchmarks.generateWdbc()
