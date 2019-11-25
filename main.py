@@ -25,11 +25,6 @@ def main():
     checkGradients = False
     inputFiles = []
 
-    # For tests
-    sys.argv.append('entry_files/network.txt')
-    sys.argv.append('entry_files/initial_weights.txt')
-    sys.argv.append('datasets/test.csv')
-
     # Separate network.txt, initial_weights.txt and dataset.txt
     for arg in sys.argv[1:]:
         if arg.endswith('.txt') or arg.endswith('.csv'):
@@ -153,7 +148,7 @@ def evaluate_performance():
         neural_network = NeuralNetWork(networks_layers_size, 
                                        regFactor=regularization_factor)
         neural_network.train(training_data, batchSize=batchSize, 
-                             alpha=alphaValue, plotError=False)
+                             alpha=alphaValue, plotError=True)
 
         runPerformances = []
         runPrecisions = []

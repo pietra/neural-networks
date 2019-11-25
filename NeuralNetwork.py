@@ -220,7 +220,7 @@ class NeuralNetWork():
                 curError = self.calculate_cost_function(batchInstances, 
                                                         applyReg=True)
 
-                # log.debug("Error: %.5f" % curError)
+                log.debug("Error: %.5f" % curError)
                 learningGraphY.append(curError)
                 learningGraphX.append(trainingRuns)
 
